@@ -65,7 +65,7 @@ fn test_save_and_get_children() -> Result<()> {
     let child_1 = ChildEntity1::get(&(String::from("id3"), 0), &db)?;
     assert!(child_1.is_some());
     let e2_3 = Entity2::get(&String::from("id3"), &db)?.unwrap();
-    let children = e2_3.get_children::<ChildEntity1>(&db)?;
+    let children: Vec<ChildEntity1> = e2_3.get_children(&db)?;
     assert_eq!(children.len(), 3);
     tear_down(&name)?;
     Ok(())
@@ -77,11 +77,12 @@ fn test_cascade_children() -> Result<()> {
     let db = set_up(&name)?;
     set_up_content(&db)?;
     let e2_3 = Entity2::get(&String::from("id3"), &db)?.unwrap();
-    let children = e2_3.get_children::<ChildEntity1>(&db)?;
+    let mut children: Vec<ChildEntity1> = e2_3.get_children(&db)?;
     assert_eq!(children.len(), 3);
     Entity2::remove(&String::from("id3"), &db)?;
     assert!(Entity2::get(&String::from("id3"), &db)?.is_none());
-    assert_eq!(e2_3.get_children::<ChildEntity1>(&db)?.len(), 0);
+    children = e2_3.get_children(&db)?;
+    assert_eq!(children.len(), 0);
     tear_down(&name)?;
     Ok(())
 }
@@ -92,12 +93,13 @@ fn test_delete_children_error() -> Result<()> {
     let db = set_up(&name)?;
     set_up_content(&db)?;
     let e3_2 = Entity3::get(&2, &db)?.unwrap();
-    let children = e3_2.get_children::<ChildEntity2>(&db)?;
+    let mut children: Vec<ChildEntity2> = e3_2.get_children(&db)?;
     assert_eq!(children.len(), 3);
     assert!(Entity3::remove(&2, &db).is_err());
     let e3_2 = Entity3::get(&2, &db)?;
     assert!(e3_2.is_some());
-    assert_eq!(e3_2.unwrap().get_children::<ChildEntity2>(&db)?.len(), 3);
+    children = e3_2.unwrap().get_children(&db)?;
+    assert_eq!(children.len(), 3);
     tear_down(&name)?;
     Ok(())
 }
@@ -352,14 +354,15 @@ fn test_adopt_child() -> Result<()> {
     set_up_content(&db)?;
     let e2_1 = Entity2::get(&String::from("id1"), &db)?.unwrap();
     let e2_3 = Entity2::get(&String::from("id3"), &db)?.unwrap();
-    let mut children = e2_3.get_children::<ChildEntity1>(&db)?;
+    let mut children: Vec<ChildEntity1> = e2_3.get_children(&db)?;
     assert_eq!(children.len(), 3);
     assert_eq!(children[1].get_key().1, 1);
-    assert_eq!(e2_1.get_children::<ChildEntity1>(&db)?.len(), 0);
+    let children_2: Vec<ChildEntity1> = e2_1.get_children(&db)?;
+    assert_eq!(children_2.len(), 0);
     e2_1.adopt_as_next_child(&mut children[1], &db)?;
-    let children = e2_3.get_children::<ChildEntity1>(&db)?;
+    let children: Vec<ChildEntity1> = e2_3.get_children(&db)?;
     assert_eq!(children.len(), 2);
-    let other_children = e2_1.get_children::<ChildEntity1>(&db)?;
+    let other_children: Vec<ChildEntity1> = e2_1.get_children(&db)?;
     assert_eq!(other_children.len(), 1);
     assert_eq!(other_children[0].get_key().1, 3);
     tear_down(&name)?;
@@ -373,13 +376,14 @@ fn test_adopt_child_with_children() -> Result<()> {
     set_up_content(&db)?;
     let e2_1 = Entity2::get(&String::from("id1"), &db)?.unwrap();
     let e2_3 = Entity2::get(&String::from("id3"), &db)?.unwrap();
-    let mut children = e2_3.get_children::<ChildEntity1>(&db)?;
+    let mut children: Vec<ChildEntity1> = e2_3.get_children(&db)?;
     e2_1.adopt_as_next_child(&mut children[2], &db)?;
-    let other_children = e2_1.get_children::<ChildEntity1>(&db)?;
+    let other_children: Vec<ChildEntity1> = e2_1.get_children(&db)?;
     assert_eq!(other_children.len(), 1);
     let child = &other_children[0];
     assert_eq!(child.get_key().1, 3);
-    assert_eq!(child.get_children::<GrandChildEntity>(&db)?.len(), 3);
+    let grand_children: Vec<GrandChildEntity> = child.get_children(&db)?;
+    assert_eq!(grand_children.len(), 3);
     tear_down(&name)?;
     Ok(())
 }
@@ -392,7 +396,7 @@ fn test_adopt_child_with_relations() -> Result<()> {
     let e2_1 = Entity2::get(&String::from("id1"), &db)?.unwrap();
     let e2_3 = Entity2::get(&String::from("id3"), &db)?.unwrap();
     let e3 = Entity3::get(&0, &db)?.unwrap();
-    let mut children = e2_3.get_children::<ChildEntity1>(&db)?;
+    let mut children: Vec<ChildEntity1> = e2_3.get_children(&db)?;
     children[2].create_relation(
         &e3,
         DeletionBehaviour::BreakLink,
@@ -401,7 +405,7 @@ fn test_adopt_child_with_relations() -> Result<()> {
         &db,
     )?;
     e2_1.adopt_as_next_child(&mut children[2], &db)?;
-    let other_children = e2_1.get_children::<ChildEntity1>(&db)?;
+    let other_children: Vec<ChildEntity1> = e2_1.get_children(&db)?;
     assert_eq!(other_children.len(), 1);
     let child = &other_children[0];
     assert_eq!(child.get_key().1, 3);

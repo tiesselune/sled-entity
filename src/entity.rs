@@ -819,7 +819,7 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// let m_struct_1 = MyStruct1::get(&9,&db)?;
     /// let children = m_struct_1.get_children::<MyStruct2>(&db)?;
     /// ```
-    fn get_children<E: Entity<Key = (Self::Key, u32)>>(&self, db: &Db) -> Result<Vec<E>> {
+    fn get_children<E: Entity<Key = (Self::Key, impl AsBytes)>>(&self, db: &Db) -> Result<Vec<E>> {
         E::get_with_prefix(self.get_key(), db)
     }
 }
