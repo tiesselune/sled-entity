@@ -817,8 +817,10 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// ### Exemple
     /// ```rust
     /// let m_struct_1 = MyStruct1::get(&9,&db)?;
-    /// let children = m_struct_1.get_children::<MyStruct2>(&db)?;
+    /// let children : Vec<MyStruct2> = _struct_1.get_children(&db)?;
     /// ```
+    /// Note : Due to [turbofish restrictions](https://github.com/rust-lang/rust/issues/83701), 
+    /// `_struct_1.get_children::<MyStruct2>(&db)?` cannot be used [before rust 1.63](https://github.com/rust-lang/rust/issues/83701#issuecomment-1190578601)
     fn get_children<E: Entity<Key = (Self::Key, impl AsBytes)>>(&self, db: &Db) -> Result<Vec<E>> {
         E::get_with_prefix(self.get_key(), db)
     }
