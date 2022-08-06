@@ -131,7 +131,7 @@ MyStruct::remove(0,&db)?;
 
 ### Sibling relationships
 
-To create a sibling Entity, you need to link the Entity structs together by overriding the `get_sibling_trees()` method :
+To create a sibling Entity, you need to link the Entity structs together by overriding the `get_sibling_stores()` method :
 
 ```rust
 use reindeer::{Entity,DeletionBehaviour};
@@ -140,7 +140,7 @@ impl Entity for MyStruct1{
     fn store_name() -> &'static str {
         "my_struct_1"
     }
-    fn get_sibling_trees() -> Vec<(&'static str,DeletionBehaviour)> {
+    fn get_sibling_stores() -> Vec<(&'static str,DeletionBehaviour)> {
         return vec![("my_struct_2",DeletionBehaviour::Cascade)]
     }
 }
@@ -150,7 +150,7 @@ impl Entity for MyStruct2{
     fn store_name() -> &'static str {
         "my_struct_2"
     }
-    fn get_sibling_trees() -> Vec<(&'static str,DeletionBehaviour)> {
+    fn get_sibling_stores() -> Vec<(&'static str,DeletionBehaviour)> {
         return vec![("my_struct_1",DeletionBehaviour::BreakLink)]
     }
 }
@@ -211,7 +211,7 @@ impl Entity for Parent{
     fn store_name() -> &'static str {
         "parent"
     }
-    fn get_child_trees() -> Vec<(&'static str)> {
+    fn get_child_stores() -> Vec<(&'static str)> {
         return vec![("child", DeletionBehaviour::Cascade)]
     }
 }

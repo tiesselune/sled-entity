@@ -52,7 +52,7 @@ impl Entity for Entity1 {
     fn set_key(&mut self, key: &Self::Key) {
         self.id = *key;
     }
-    fn get_sibling_trees() -> Vec<(&'static str, DeletionBehaviour)> {
+    fn get_sibling_stores() -> Vec<(&'static str, DeletionBehaviour)> {
         vec![("entity_3", DeletionBehaviour::Cascade)]
     }
 }
@@ -72,7 +72,7 @@ impl Entity for Entity2 {
         self.id = key.clone();
     }
 
-    fn get_child_trees() -> Vec<(&'static str, crate::DeletionBehaviour)> {
+    fn get_child_stores() -> Vec<(&'static str, crate::DeletionBehaviour)> {
         vec![("child_entity_1", DeletionBehaviour::Cascade)]
     }
 }
@@ -91,10 +91,10 @@ impl Entity for Entity3 {
     fn set_key(&mut self, key: &Self::Key) {
         self.id = *key;
     }
-    fn get_sibling_trees() -> Vec<(&'static str, DeletionBehaviour)> {
+    fn get_sibling_stores() -> Vec<(&'static str, DeletionBehaviour)> {
         vec![("entity_1", DeletionBehaviour::Error)]
     }
-    fn get_child_trees() -> Vec<(&'static str, DeletionBehaviour)> {
+    fn get_child_stores() -> Vec<(&'static str, DeletionBehaviour)> {
         vec![("child_entity_2", DeletionBehaviour::Error)]
     }
 }
@@ -114,7 +114,7 @@ impl Entity for ChildEntity1 {
         self.id = key.clone();
     }
 
-    fn get_child_trees() -> Vec<(&'static str, DeletionBehaviour)> {
+    fn get_child_stores() -> Vec<(&'static str, DeletionBehaviour)> {
         vec![("grand_child_entity", DeletionBehaviour::Cascade)]
     }
 }

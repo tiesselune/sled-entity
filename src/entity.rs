@@ -111,7 +111,7 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// ### Example
     /// ```rust
     /// impl Entity for MyStruct {
-    ///     fn get_sibling_trees() -> Vec<(&'static str, DeletionBehaviour)> {
+    ///     fn get_sibling_stores() -> Vec<(&'static str, DeletionBehaviour)> {
     ///         vec![
     ///             ("sibling_struct_1",DeletionBehaviour::Cascade),
     ///             ("sibling_struct_2",DeletionBehaviour::Error)
@@ -119,7 +119,7 @@ pub trait Entity: Serialize + DeserializeOwned {
     ///     }
     /// }
     /// ```
-    fn get_sibling_trees() -> Vec<(&'static str, DeletionBehaviour)> {
+    fn get_sibling_stores() -> Vec<(&'static str, DeletionBehaviour)> {
         Vec::new()
     }
 
@@ -138,14 +138,14 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// ### Example
     /// ```rust
     /// impl Entity for MyStruct {
-    ///     fn get_child_trees() -> Vec<(&'static str, DeletionBehaviour)> {
+    ///     fn get_child_stores() -> Vec<(&'static str, DeletionBehaviour)> {
     ///         vec![
     ///             ("child_struct",DeletionBehaviour::Cascade),
     ///         ]
     ///     }
     /// }
     /// ```
-    fn get_child_trees() -> Vec<(&'static str, DeletionBehaviour)> {
+    fn get_child_stores() -> Vec<(&'static str, DeletionBehaviour)> {
         Vec::new()
     }
 
@@ -166,11 +166,11 @@ pub trait Entity: Serialize + DeserializeOwned {
     fn register(db: &Db) -> Result<()> {
         let desc = FamilyDescriptor {
             tree_name: String::from(Self::store_name()),
-            child_trees: Self::get_child_trees()
+            child_trees: Self::get_child_stores()
                 .iter()
                 .map(|e| (String::from(e.0), e.1))
                 .collect(),
-            sibling_trees: Self::get_sibling_trees()
+            sibling_trees: Self::get_sibling_stores()
                 .iter()
                 .map(|e| (String::from(e.0), e.1))
                 .collect(),
@@ -448,6 +448,13 @@ pub trait Entity: Serialize + DeserializeOwned {
         Ok(())
     }
 
+    /// Override this function to be called before removing an entry.
+    ///
+    /// ⚠ Child, sibling and related entries will automatically be removed *before* this one.
+    fn pre_remove_hook(_key: &[u8], _db : &Db) -> Result<()> {
+        Ok(())
+    }
+
     #[doc(hidden)]
     fn pre_remove(key: &[u8], db: &Db) -> Result<()> {
         let mut to_be_removed = EntityRelations::default();
@@ -490,6 +497,7 @@ pub trait Entity: Serialize + DeserializeOwned {
     #[doc(hidden)]
     fn remove_from_u8_array(key: &[u8], db: &Db) -> Result<()> {
         Self::pre_remove(key, db)?;
+        Self::pre_remove_hook(key, db)?;
         Self::get_tree(db)?.remove(key)?;
         Ok(())
     }
