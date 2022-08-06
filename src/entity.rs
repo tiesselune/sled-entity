@@ -448,7 +448,11 @@ pub trait Entity: Serialize + DeserializeOwned {
         Ok(())
     }
 
-    /// Override this function to be called before removing an entry.
+    /// Override this function to be called before removing an entry. Use this to clean up side effects
+    /// before removing an entry.
+    /// If an entry cannot be removed (i.e. remaining constraints), this will not be called.
+    /// 
+    /// 💡 To get the key as a `&[u8]`, use `self.get_key().as_bytes().as_slice()`
     ///
     /// ⚠ Child, sibling and related entries will automatically be removed *before* this one.
     fn pre_remove_hook(_key: &[u8], _db : &Db) -> Result<()> {
