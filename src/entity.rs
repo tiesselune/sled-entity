@@ -4,6 +4,7 @@
 
 use std::{fs::File, mem::size_of};
 
+use crate::Error;
 use crate::error::Result;
 use crate::relation::{DeletionBehaviour, EntityRelations, FamilyDescriptor, Relation};
 use serde::{de::DeserializeOwned, Serialize};
@@ -448,14 +449,19 @@ pub trait Entity: Serialize + DeserializeOwned {
         Ok(())
     }
 
-    /// Override this function to be called before removing an entry. Use this to clean up side effects
-    /// before removing an entry.
+    /// Override this function by returning `true` to cause `pre_remove_hook` to be called before removing an entry.
+    /// 
+    /// For this function to be useful, also override `pre_remove_hook` with your cleanup code.
+    fn use_pre_remove_hook() -> bool {
+        false
+    }
+
+    /// Override this function along with `use_pre_remove_hook`to be called before removing an entry. 
+    /// Use this to clean up side effects before removing it.
     /// If an entry cannot be removed (i.e. remaining constraints), this will not be called.
     /// 
-    /// 💡 To get the key as a `&[u8]`, use `self.get_key().as_bytes().as_slice()`
-    ///
     /// ⚠ Child, sibling and related entries will automatically be removed *before* this one.
-    fn pre_remove_hook(_key: &[u8], _db : &Db) -> Result<()> {
+    fn pre_remove_hook(&self, _db : &Db) -> Result<()> {
         Ok(())
     }
 
@@ -501,7 +507,9 @@ pub trait Entity: Serialize + DeserializeOwned {
     #[doc(hidden)]
     fn remove_from_u8_array(key: &[u8], db: &Db) -> Result<()> {
         Self::pre_remove(key, db)?;
-        Self::pre_remove_hook(key, db)?;
+        if Self::use_pre_remove_hook() {
+            Self::pre_remove_hook(&Self::get_from_u8_array(key, db)?.ok_or(Error::new(crate::ErrorKind::IntegrityError,"Entry was not found".to_string()))?, db)?;
+        }
         Self::get_tree(db)?.remove(key)?;
         Ok(())
     }
