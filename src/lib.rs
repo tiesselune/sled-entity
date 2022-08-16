@@ -36,6 +36,8 @@
 mod entity;
 mod error;
 mod relation;
+mod query_builder;
+pub use query_builder::*;
 pub use entity::AutoIncrementEntity;
 pub use entity::Entity;
 pub use relation::DeletionBehaviour;

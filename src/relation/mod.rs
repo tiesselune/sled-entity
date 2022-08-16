@@ -380,7 +380,7 @@ impl Relation {
         format!("__$rel_{}", entity_tree)
     }
 
-    fn get_descriptor_with_key_and_tree_name(
+    pub fn get_descriptor_with_key_and_tree_name(
         tree_name: &str,
         e: &[u8],
         db: &Db,
