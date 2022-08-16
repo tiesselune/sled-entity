@@ -1,7 +1,5 @@
 mod test_entities;
 
-use std::process::Child;
-
 use crate::{
     error::Result, relation::FamilyDescriptor, test::test_entities::GrandChildEntity,
     AutoIncrementEntity, DeletionBehaviour, Entity, QueryBuilder, entity::AsBytes,

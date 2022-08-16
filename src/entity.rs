@@ -4,7 +4,7 @@
 
 use std::{fs::File, mem::size_of};
 
-use crate::{Error, ErrorKind};
+use crate::{Error};
 use crate::error::Result;
 use crate::relation::{DeletionBehaviour, EntityRelations, FamilyDescriptor, Relation};
 use serde::{de::DeserializeOwned, Serialize};
