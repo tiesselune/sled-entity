@@ -26,19 +26,19 @@ impl<'a> QueryBuilder<'a> {
     }
 
     /// Specifies an array of ids to consider in this query. This can be used multiple times.
-    pub fn with_ids(&mut self, ids: &mut Vec<impl AsBytes>) -> &mut QueryBuilder<'a> {
+    pub fn with_ids(&mut self, ids: &mut Vec<&impl AsBytes>) -> &mut QueryBuilder<'a> {
         self.ids.append(&mut ids.iter().map(|id| id.as_bytes()).collect());
         self
     }
 
     /// Specifies an single id to consider in this query. This can be used multiple times to specify several ids.
-    pub fn with_id(&mut self, id: impl AsBytes) -> &mut QueryBuilder<'a> {
+    pub fn with_id(&mut self, id: &impl AsBytes) -> &mut QueryBuilder<'a> {
         self.ids.push(id.as_bytes());
         self
     }
     /// Specifies that this entity is the child of a given parent.
     /// This implies that the queried store is marked as a child of another entity type.
-    pub fn with_parent(&mut self, id: impl AsBytes) -> &mut QueryBuilder<'a> {
+    pub fn with_parent(&mut self, id: &impl AsBytes) -> &mut QueryBuilder<'a> {
         self.parent = Some(id.as_bytes());
         self
     }
@@ -47,7 +47,7 @@ impl<'a> QueryBuilder<'a> {
     /// This can be used multiple times to specify several conditions.
     pub fn with_named_relation_to<OT: Entity>(
         &mut self,
-        id: impl AsBytes,
+        id: &impl AsBytes,
         name: &'a str,
     ) -> &mut QueryBuilder<'a> {
         self.related_to.push((OT::store_name(), id.as_bytes(), Some(name)));
@@ -56,7 +56,7 @@ impl<'a> QueryBuilder<'a> {
 
     /// Specifies that an unnamed relation to another entity has to exist.
     /// This can be used multiple times to specify several conditions.
-    pub fn with_relation_to<OT: Entity>(&mut self, id: impl AsBytes) -> &mut QueryBuilder<'a> {
+    pub fn with_relation_to<OT: Entity>(&mut self, id: &impl AsBytes) -> &mut QueryBuilder<'a> {
         self.related_to.push((OT::store_name(), id.as_bytes(), None));
         self
     }
