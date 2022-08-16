@@ -12,7 +12,7 @@ pub struct Entity1 {
     pub prop1: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Entity2 {
     pub id: String,
     pub prop2: u32,
@@ -183,22 +183,27 @@ pub fn set_up_content(db: &Db) -> Result<()> {
     e2.set_key(&String::from("id2"));
     e2.prop2 = 5;
     e2.save(db)?;
+    let e2_2 = e2.clone();
     e2.set_key(&String::from("id3"));
     e2.prop2 = 1000;
     e2.save(db)?;
     let mut e3 = Entity3 { id: 0 };
     e3.save_next(db)?;
     e3.save_next(db)?;
-    e3.save_next(db)?;
     let mut e4 = ChildEntity1 {
         id: (String::from("id0"), 0),
     };
+    e3.save_next(db)?;
+
     e2.save_next_child(&mut e4, db)?;
     e2.save_next_child(&mut e4, db)?;
     e2.save_next_child(&mut e4, db)?;
+    e2_2.save_next_child(&mut e4, db)?;
+   
     let mut e5 = ChildEntity2 { id: (0, 0) };
     e3.save_next_child(&mut e5, db)?;
     e3.save_next_child(&mut e5, db)?;
+    e4.create_relation(&e5, DeletionBehaviour::BreakLink, DeletionBehaviour::BreakLink, None, db)?;
     e3.save_next_child(&mut e5, db)?;
     let mut grand_child = GrandChildEntity {
         id: ((String::from("id0"), 1), 0),

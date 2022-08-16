@@ -10,38 +10,36 @@ use crate::{relation::Relation, Entity, Result};
 /// just use `&entity.get_key().as_bytes()`.
 ///
 /// Execute the query with `get` or `get_single`, providing the Db instance to run it on.
-pub struct QueryBuilder<'a, T: Entity> {
+pub struct QueryBuilder<'a> {
     ids: Vec<&'a [u8]>,
     parent: Option<&'a [u8]>,
     related_to: Vec<(&'a str, &'a [u8], Option<&'a str>)>,
-    phantom: PhantomData<T>,
 }
 
-impl<'a, T: Entity> QueryBuilder<'a, T> {
+impl<'a> QueryBuilder<'a> {
     /// Creates a new Query Builder.
-    pub fn new() -> QueryBuilder<'a, T> {
+    pub fn new() -> QueryBuilder<'a> {
         QueryBuilder {
             ids: Vec::new(),
             parent: None,
             related_to: Vec::new(),
-            phantom: PhantomData,
         }
     }
 
     /// Specifies an array of ids to consider in this query. This can be used multiple times.
-    pub fn with_ids(&mut self, ids: &mut Vec<&'a [u8]>) -> &mut QueryBuilder<'a, T> {
+    pub fn with_ids(&mut self, ids: &mut Vec<&'a [u8]>) -> &mut QueryBuilder<'a> {
         self.ids.append(ids);
         self
     }
 
     /// Specifies an single id to consider in this query. This can be used multiple times to specify several ids.
-    pub fn with_id(&mut self, id: &'a [u8]) -> &mut QueryBuilder<'a, T> {
+    pub fn with_id(&mut self, id: &'a [u8]) -> &mut QueryBuilder<'a> {
         self.ids.push(id);
         self
     }
     /// Specifies that this entity is the child of a given parent.
     /// This implies that the queried store is marked as a child of another entity type.
-    pub fn with_parent(&mut self, id: &'a [u8]) -> &mut QueryBuilder<'a, T> {
+    pub fn with_parent(&mut self, id: &'a [u8]) -> &mut QueryBuilder<'a> {
         self.parent = Some(id);
         self
     }
@@ -52,29 +50,29 @@ impl<'a, T: Entity> QueryBuilder<'a, T> {
         &mut self,
         id: &'a [u8],
         name: &'a str,
-    ) -> &mut QueryBuilder<'a, T> {
+    ) -> &mut QueryBuilder<'a> {
         self.related_to.push((OT::store_name(), id, Some(name)));
         self
     }
 
     /// Specifies that an unnamed relation to another entity has to exist.
     /// This can be used multiple times to specify several conditions.
-    pub fn with_relation_to<OT: Entity>(&mut self, id: &'a [u8]) -> &mut QueryBuilder<'a, T> {
+    pub fn with_relation_to<OT: Entity>(&mut self, id: &'a [u8]) -> &mut QueryBuilder<'a> {
         self.related_to.push((OT::store_name(), id, None));
         self
     }
 
     /// Executes the query and returns the result as a Vec of the chosen entity.
-    pub fn get(&self, db : &Db) -> Result<Vec<T>> {
-        Ok(T::get_each_u8(&self.get_ids(db)?, db))
+    pub fn get<T : Entity>(&self, db : &Db) -> Result<Vec<T>> {
+        Ok(T::get_each_u8(&self.get_ids::<T>(db)?, db))
     }
 
     /// Executes the query and returns the first entity matching the query.
-    pub fn get_single(&self, db : &Db) -> Result<Option<T>> {
-        T::get_from_u8_array(&self.get_ids(db)?[0],db)
+    pub fn get_single<T : Entity>(&self, db : &Db) -> Result<Option<T>> {
+        T::get_from_u8_array(&self.get_ids::<T>(db)?[0],db)
     }
 
-    fn get_ids(&self, db: &Db) -> Result<Vec<Vec<u8>>> {
+    fn get_ids<T : Entity>(&self, db: &Db) -> Result<Vec<Vec<u8>>> {
         let target_ids = match (self.ids.len(), self.related_to.len(), self.parent) {
             (0, 0, None) => {
                 return Ok(Vec::new());
@@ -89,10 +87,10 @@ impl<'a, T: Entity> QueryBuilder<'a, T> {
                 return Ok(result);
             }
             (0, _, _) => {
-                self.get_related_ids(db)?
+                self.get_related_ids::<T>(db)?
             }
             (_, _, _) => {
-                let related_ids = self.get_related_ids(db)?;
+                let related_ids = self.get_related_ids::<T>(db)?;
                 let mut target_ids = Vec::new();
                 for related_id in related_ids {
                     if self.ids.contains(&related_id.as_ref()) {
@@ -111,7 +109,7 @@ impl<'a, T: Entity> QueryBuilder<'a, T> {
         }
     }
 
-    fn get_related_ids(&self, db: &Db) -> Result<Vec<Vec<u8>>> {
+    fn get_related_ids<T : Entity>(&self, db: &Db) -> Result<Vec<Vec<u8>>> {
         let mut target_ids = Vec::new();
         for (tree_name, id, relation_name) in &self.related_to {
             let descriptor = Relation::get_descriptor_with_key_and_tree_name(tree_name, id, db)?;
