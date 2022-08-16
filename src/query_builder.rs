@@ -1,7 +1,7 @@
 
 use sled::Db;
 
-use crate::{relation::Relation, Entity, Result};
+use crate::{relation::Relation, Entity, Result, AsBytes};
 
 /// `QueryBuilder` is a convenient way to build query to target several conditions without the need to immediately
 /// serialize/deserialize data from disk.
@@ -10,9 +10,9 @@ use crate::{relation::Relation, Entity, Result};
 ///
 /// Execute the query with `get` or `get_single`, providing the Db instance to run it on.
 pub struct QueryBuilder<'a> {
-    ids: Vec<&'a [u8]>,
-    parent: Option<&'a [u8]>,
-    related_to: Vec<(&'a str, &'a [u8], Option<&'a str>)>,
+    ids: Vec<Vec<u8>>,
+    parent: Option<Vec<u8>>,
+    related_to: Vec<(&'a str, Vec<u8>, Option<&'a str>)>,
 }
 
 impl<'a> QueryBuilder<'a> {
@@ -26,20 +26,20 @@ impl<'a> QueryBuilder<'a> {
     }
 
     /// Specifies an array of ids to consider in this query. This can be used multiple times.
-    pub fn with_ids(&mut self, ids: &mut Vec<&'a [u8]>) -> &mut QueryBuilder<'a> {
-        self.ids.append(ids);
+    pub fn with_ids(&mut self, ids: &mut Vec<impl AsBytes>) -> &mut QueryBuilder<'a> {
+        self.ids.append(&mut ids.iter().map(|id| id.as_bytes()).collect());
         self
     }
 
     /// Specifies an single id to consider in this query. This can be used multiple times to specify several ids.
-    pub fn with_id(&mut self, id: &'a [u8]) -> &mut QueryBuilder<'a> {
-        self.ids.push(id);
+    pub fn with_id(&mut self, id: impl AsBytes) -> &mut QueryBuilder<'a> {
+        self.ids.push(id.as_bytes());
         self
     }
     /// Specifies that this entity is the child of a given parent.
     /// This implies that the queried store is marked as a child of another entity type.
-    pub fn with_parent(&mut self, id: &'a [u8]) -> &mut QueryBuilder<'a> {
-        self.parent = Some(id);
+    pub fn with_parent(&mut self, id: impl AsBytes) -> &mut QueryBuilder<'a> {
+        self.parent = Some(id.as_bytes());
         self
     }
 
@@ -47,17 +47,17 @@ impl<'a> QueryBuilder<'a> {
     /// This can be used multiple times to specify several conditions.
     pub fn with_named_relation_to<OT: Entity>(
         &mut self,
-        id: &'a [u8],
+        id: impl AsBytes,
         name: &'a str,
     ) -> &mut QueryBuilder<'a> {
-        self.related_to.push((OT::store_name(), id, Some(name)));
+        self.related_to.push((OT::store_name(), id.as_bytes(), Some(name)));
         self
     }
 
     /// Specifies that an unnamed relation to another entity has to exist.
     /// This can be used multiple times to specify several conditions.
-    pub fn with_relation_to<OT: Entity>(&mut self, id: &'a [u8]) -> &mut QueryBuilder<'a> {
-        self.related_to.push((OT::store_name(), id, None));
+    pub fn with_relation_to<OT: Entity>(&mut self, id: impl AsBytes) -> &mut QueryBuilder<'a> {
+        self.related_to.push((OT::store_name(), id.as_bytes(), None));
         self
     }
 
@@ -72,7 +72,7 @@ impl<'a> QueryBuilder<'a> {
     }
 
     fn get_ids<T : Entity>(&self, db: &Db) -> Result<Vec<Vec<u8>>> {
-        let target_ids = match (self.ids.len(), self.related_to.len(), self.parent) {
+        let target_ids = match (self.ids.len(), self.related_to.len(), &self.parent) {
             (0, 0, None) => {
                 return Ok(Vec::new());
             }
@@ -100,7 +100,7 @@ impl<'a> QueryBuilder<'a> {
             }
         };
 
-        if let Some(parent) = self.parent {
+        if let Some(parent) = &self.parent {
             Ok(target_ids.iter().filter(|id| id.starts_with(parent)).cloned().collect())
         }
         else {

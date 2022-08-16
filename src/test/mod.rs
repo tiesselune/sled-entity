@@ -461,12 +461,12 @@ fn test_query_builder() -> Result<()> {
     set_up_content(&db)?;
     let result = QueryBuilder::new().with_parent(String::from("id3").as_bytes()).get::<ChildEntity1>(&db)?;
     assert_eq!(result.len(),3);
-    let result_2 = QueryBuilder::new().with_parent(String::from("id3").as_bytes()).with_relation_to::<ChildEntity2>(&(2,1).as_bytes()).get::<ChildEntity1>(&db)?;
+    let result_2 = QueryBuilder::new().with_parent(String::from("id3").as_bytes()).with_relation_to::<ChildEntity2>((2,1)).get::<ChildEntity1>(&db)?;
     assert_eq!(result_2.len(),0);
     let child_entity_1 = ChildEntity1::get(&(String::from("id3"),1),&db)?.unwrap();
     let child_entity_2 = ChildEntity2::get(&(2,1),&db)?.unwrap();
     child_entity_1.create_relation(&child_entity_2, DeletionBehaviour::BreakLink, DeletionBehaviour::BreakLink, None, &db)?;
-    let result_3 = QueryBuilder::new().with_parent(String::from("id3").as_bytes()).with_relation_to::<ChildEntity2>(&(2,1).as_bytes()).get::<ChildEntity1>(&db)?;
+    let result_3 = QueryBuilder::new().with_parent(String::from("id3").as_bytes()).with_relation_to::<ChildEntity2>((2,1)).get::<ChildEntity1>(&db)?;
     assert_eq!(result_3.len(),1);
     tear_down(&name)?;
     Ok(())
