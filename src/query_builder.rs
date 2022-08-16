@@ -9,10 +9,7 @@ use crate::{relation::Relation, Entity, Result};
 /// For simplicity's sake, ids are expressed as `&[u8]`. To get the key of an entity using this type,
 /// just use `&entity.get_key().as_bytes()`.
 ///
-/// ## Example
-/// ```rs
-///
-/// ```
+/// Execute the query with `get` or `get_single`, providing the Db instance to run it on.
 pub struct QueryBuilder<'a, T: Entity> {
     ids: Vec<&'a [u8]>,
     parent: Option<&'a [u8]>,
