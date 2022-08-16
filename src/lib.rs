@@ -39,7 +39,7 @@ mod relation;
 mod query_builder;
 pub use query_builder::*;
 pub use entity::AutoIncrementEntity;
-pub use entity::Entity;
+pub use entity::{Entity,AsBytes};
 pub use relation::DeletionBehaviour;
 pub use serde_derive::{Deserialize, Serialize};
 
