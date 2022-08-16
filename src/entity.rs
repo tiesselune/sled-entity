@@ -4,7 +4,7 @@
 
 use std::{fs::File, mem::size_of};
 
-use crate::Error;
+use crate::{Error, ErrorKind};
 use crate::error::Result;
 use crate::relation::{DeletionBehaviour, EntityRelations, FamilyDescriptor, Relation};
 use serde::{de::DeserializeOwned, Serialize};
@@ -819,7 +819,10 @@ pub trait Entity: Serialize + DeserializeOwned {
         &self,
         child: &mut E,
         db: &Db,
-    ) -> Result<()> {
+    ) -> Result<()>  where <Self as Entity>::Key : PartialEq {
+        if child.get_key().0 == *self.get_key() {
+            return Ok(());
+        }
         let old_id = child.get_key().clone();
         self.save_child(child, db)?;
         Relation::change_entity_id(
