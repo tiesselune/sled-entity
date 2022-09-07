@@ -1,4 +1,3 @@
-use serde::{Serialize, de::DeserializeOwned};
 use serde_derive::{Serialize, Deserialize};
 use sled::Db;
 use crate::{Result, AsBytes};
