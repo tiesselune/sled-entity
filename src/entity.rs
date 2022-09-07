@@ -572,9 +572,14 @@ pub trait Entity: Serialize + DeserializeOwned {
 
     /// Exports the entire store for this entity as a JSON file.
     /// This can be used for saving purposes.
-    fn export_json(f: File, db: &Db) -> Result<()> {
+    fn export_json(f: File, pretty : bool, db: &Db) -> Result<()> {
         let all = Self::get_all(db)?;
-        serde_json::to_writer(f, &JsonWrapper::from(all, db)?)?;
+        if pretty {
+            serde_json::to_writer_pretty(f, &JsonWrapper::from(all, db)?)?;
+        }
+        else {
+            serde_json::to_writer(f, &JsonWrapper::from(all, db)?)?;
+        }
         Ok(())
     }
 
