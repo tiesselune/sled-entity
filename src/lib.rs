@@ -37,6 +37,7 @@ mod entity;
 mod error;
 mod relation;
 mod query_builder;
+mod import_export;
 pub use query_builder::*;
 pub use entity::AutoIncrementEntity;
 pub use entity::{Entity,AsBytes};

@@ -4,6 +4,7 @@
 
 use std::{fs::File, mem::size_of};
 
+use crate::import_export::JsonWrapper;
 use crate::{Error};
 use crate::error::Result;
 use crate::relation::{DeletionBehaviour, EntityRelations, FamilyDescriptor, Relation};
@@ -573,7 +574,7 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// This can be used for saving purposes.
     fn export_json(f: File, db: &Db) -> Result<()> {
         let all = Self::get_all(db)?;
-        serde_json::to_writer(f, &all)?;
+        serde_json::to_writer(f, &JsonWrapper::from(all, db)?)?;
         Ok(())
     }
 
@@ -584,10 +585,8 @@ pub trait Entity: Serialize + DeserializeOwned {
     ///
     /// ⚠ If the structure of the JSON file does not match the Structs used in the app, this will fail with an error.
     fn import_json(f: File, db: &Db) -> Result<()> {
-        let all: Vec<Self> = serde_json::from_reader(f)?;
-        for each in all {
-            each.save(db)?;
-        }
+        let wrapper : JsonWrapper<Self> = serde_json::from_reader(f)?;
+        wrapper.save(db)?;
         Ok(())
     }
 
