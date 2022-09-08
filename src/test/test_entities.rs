@@ -23,7 +23,7 @@ pub struct Entity3 {
     pub id: u32,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize,Clone)]
 pub struct ChildEntity1 {
     id: (String, u32),
 }
@@ -198,7 +198,8 @@ pub fn set_up_content(db: &Db) -> Result<()> {
     e2.save_next_child(&mut e4, db)?;
     e2.save_next_child(&mut e4, db)?;
     e2.save_next_child(&mut e4, db)?;
-    e2_2.save_next_child(&mut e4, db)?;
+    let mut e4_2 = e4.clone();
+    e2_2.save_next_child(&mut e4_2, db)?;
    
     let mut e5 = ChildEntity2 { id: (0, 0) };
     e3.save_next_child(&mut e5, db)?;
@@ -211,6 +212,9 @@ pub fn set_up_content(db: &Db) -> Result<()> {
     e4.save_next_child(&mut grand_child, db)?;
     e4.save_next_child(&mut grand_child, db)?;
     e4.save_next_child(&mut grand_child, db)?;
+    assert_eq!(grand_child.get_key().0.0,"id3");
+    assert_eq!(grand_child.get_key().0.1,2);
+    assert_eq!(grand_child.get_key().1,2);
     Ok(())
 }
 

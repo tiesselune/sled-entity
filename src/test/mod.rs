@@ -306,7 +306,7 @@ fn test_recursive_cascade() -> Result<()> {
     assert_eq!(related.len(), 2);
     assert!(Entity1::remove(e1.get_key(), &db).is_ok());
     assert_eq!(e1.get_related::<Entity2>(&db)?.len(), 0);
-    assert_eq!(ChildEntity1::get_count(&db)?, 0);
+    assert_eq!(ChildEntity1::get_count(&db)?, 1);
     tear_down(&name)?;
     Ok(())
 }
@@ -341,7 +341,7 @@ fn test_recursive_error() -> Result<()> {
     assert_eq!(related.len(), 2);
     assert!(Entity1::remove(e1.get_key(), &db).is_err());
     assert_eq!(e1.get_related::<Entity2>(&db)?.len(), 2);
-    assert_eq!(ChildEntity1::get_count(&db)?, 3);
+    assert_eq!(ChildEntity1::get_count(&db)?, 4);
 
     tear_down(&name)?;
     Ok(())
@@ -364,7 +364,7 @@ fn test_adopt_child() -> Result<()> {
     assert_eq!(children.len(), 2);
     let other_children: Vec<ChildEntity1> = e2_1.get_children(&db)?;
     assert_eq!(other_children.len(), 1);
-    assert_eq!(other_children[0].get_key().1, 3);
+    assert_eq!(other_children[0].get_key().1, 0);
     tear_down(&name)?;
     Ok(())
 }
@@ -377,12 +377,14 @@ fn test_adopt_child_with_children() -> Result<()> {
     let e2_1 = Entity2::get(&String::from("id1"), &db)?.unwrap();
     let e2_3 = Entity2::get(&String::from("id3"), &db)?.unwrap();
     let mut children: Vec<ChildEntity1> = e2_3.get_children(&db)?;
+    let mut grand_children: Vec<GrandChildEntity> = children[2].get_children(&db)?;
+    assert_eq!(grand_children.len(), 3);
     e2_1.adopt_as_next_child(&mut children[2], &db)?;
     let other_children: Vec<ChildEntity1> = e2_1.get_children(&db)?;
     assert_eq!(other_children.len(), 1);
     let child = &other_children[0];
-    assert_eq!(child.get_key().1, 3);
-    let grand_children: Vec<GrandChildEntity> = child.get_children(&db)?;
+    assert_eq!(child.get_key().1, 0);
+    grand_children = child.get_children(&db)?;
     assert_eq!(grand_children.len(), 3);
     tear_down(&name)?;
     Ok(())
@@ -408,7 +410,7 @@ fn test_adopt_child_with_relations() -> Result<()> {
     let other_children: Vec<ChildEntity1> = e2_1.get_children(&db)?;
     assert_eq!(other_children.len(), 1);
     let child = &other_children[0];
-    assert_eq!(child.get_key().1, 3);
+    assert_eq!(child.get_key().1, 0);
     assert_eq!(child.get_related::<Entity3>(&db)?.len(), 1);
     assert_eq!(e3.get_related::<ChildEntity1>(&db)?.len(), 1);
     tear_down(&name)?;
@@ -462,12 +464,12 @@ fn test_query_builder() -> Result<()> {
     let result = QueryBuilder::new().with_parent(&String::from("id3")).get::<ChildEntity1>(&db)?;
     assert_eq!(result.len(),3);
     let result_2 = QueryBuilder::new().with_parent(&String::from("id3")).with_relation_to::<ChildEntity2>(&(2,1)).get::<ChildEntity1>(&db)?;
-    assert_eq!(result_2.len(),0);
+    assert_eq!(result_2.len(),1);
     let child_entity_1 = ChildEntity1::get(&(String::from("id3"),1),&db)?.unwrap();
     let child_entity_2 = ChildEntity2::get(&(2,1),&db)?.unwrap();
     child_entity_1.create_relation(&child_entity_2, DeletionBehaviour::BreakLink, DeletionBehaviour::BreakLink, None, &db)?;
     let result_3 = QueryBuilder::new().with_parent(&String::from("id3")).with_relation_to::<ChildEntity2>(&(2,1)).get::<ChildEntity1>(&db)?;
-    assert_eq!(result_3.len(),1);
+    assert_eq!(result_3.len(),2);
     tear_down(&name)?;
     Ok(())
 }

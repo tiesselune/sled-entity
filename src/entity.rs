@@ -763,8 +763,8 @@ pub trait Entity: Serialize + DeserializeOwned {
         child: &mut E,
         db: &Db,
     ) -> Result<E::Key> {
-        let increment = match E::get_tree(db)?.scan_prefix(&self.get_key().as_bytes()).last() {
-            Some(Ok((key, _))) => {
+        let increment = match E::get_tree(db)?.scan_prefix(&self.get_key().as_bytes()).flatten().last() {
+            Some((key, _)) => {
                 let u32_part = key
                     .iter()
                     .rev()
