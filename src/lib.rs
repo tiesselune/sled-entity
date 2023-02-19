@@ -35,12 +35,12 @@
 
 mod entity;
 mod error;
-mod relation;
-mod query_builder;
 mod import_export;
-pub use query_builder::*;
+mod query_builder;
+mod relation;
 pub use entity::AutoIncrementEntity;
-pub use entity::{Entity,AsBytes};
+pub use entity::{AsBytes, Entity};
+pub use query_builder::*;
 pub use relation::DeletionBehaviour;
 pub use serde_derive::{Deserialize, Serialize};
 

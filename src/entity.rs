@@ -4,10 +4,10 @@
 
 use std::{fs::File, mem::size_of};
 
-use crate::import_export::JsonWrapper;
-use crate::{Error};
 use crate::error::Result;
+use crate::import_export::JsonWrapper;
 use crate::relation::{DeletionBehaviour, EntityRelations, FamilyDescriptor, Relation};
+use crate::Error;
 use serde::{de::DeserializeOwned, Serialize};
 use sled::{Batch, Db, IVec, Tree};
 use std::convert::TryInto;
@@ -243,14 +243,15 @@ pub trait Entity: Serialize + DeserializeOwned {
     fn get_from_u8_array(key: &[u8], db: &Db) -> Result<Option<Self>> {
         Self::get_tree(db)?
             .get(key)?
-            .map(|vec| -> Result<Self> { Self::try_from_ivec(vec) }).transpose()
+            .map(|vec| -> Result<Self> { Self::try_from_ivec(vec) })
+            .transpose()
     }
 
     #[doc(hidden)]
     fn get_with_prefix(key: &impl AsBytes, db: &Db) -> Result<Vec<Self>> {
         Self::get_tree(db)?
             .scan_prefix(key.as_bytes())
-            .map(|elem| -> Result<Self> { Self::try_from_ivec(elem?.1)})
+            .map(|elem| -> Result<Self> { Self::try_from_ivec(elem?.1) })
             .collect()
     }
 
@@ -362,7 +363,10 @@ pub trait Entity: Serialize + DeserializeOwned {
         Self::get_tree(db)?
             .iter()
             .map(|elem| -> Result<Self> { Self::try_from_ivec(elem?.1) })
-            .filter(|e| match e { Ok(v) => f(v), Err(_) => false})
+            .filter(|e| match e {
+                Ok(v) => f(v),
+                Err(_) => false,
+            })
             .collect()
     }
 
@@ -404,10 +408,7 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// my_struct.save(&db)?;
     /// ```
     fn save(&self, db: &Db) -> Result<()> {
-        Self::get_tree(db)?.insert(
-            &self.get_key().as_bytes(),
-            bincode::serialize(self)?,
-        )?;
+        Self::get_tree(db)?.insert(&self.get_key().as_bytes(), bincode::serialize(self)?)?;
         Ok(())
     }
 
@@ -420,11 +421,15 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// ```
     fn update<F: Fn(&mut Self)>(key: &Self::Key, f: F, db: &Db) -> Result<()> {
         Self::get_tree(db)?.fetch_and_update(&key.as_bytes(), |e| {
-            Result::ok(e.map(|u8_arr| -> Result<IVec> {
-                let mut value = Self::try_from_ivec(IVec::from(u8_arr))?;
-                f(&mut value);
-                value.try_into_ivec()
-            }).transpose()).flatten()
+            Result::ok(
+                e.map(|u8_arr| -> Result<IVec> {
+                    let mut value = Self::try_from_ivec(IVec::from(u8_arr))?;
+                    f(&mut value);
+                    value.try_into_ivec()
+                })
+                .transpose(),
+            )
+            .flatten()
         })?;
         Ok(())
     }
@@ -451,18 +456,18 @@ pub trait Entity: Serialize + DeserializeOwned {
     }
 
     /// Override this function by returning `true` to cause `pre_remove_hook` to be called before removing an entry.
-    /// 
+    ///
     /// For this function to be useful, also override `pre_remove_hook` with your cleanup code.
     fn use_pre_remove_hook() -> bool {
         false
     }
 
-    /// Override this function along with `use_pre_remove_hook`to be called before removing an entry. 
+    /// Override this function along with `use_pre_remove_hook`to be called before removing an entry.
     /// Use this to clean up side effects before removing it.
     /// If an entry cannot be removed (i.e. remaining constraints), this will not be called.
-    /// 
+    ///
     /// ⚠ Child, sibling and related entries will automatically be removed *before* this one.
-    fn pre_remove_hook(&self, _db : &Db) -> Result<()> {
+    fn pre_remove_hook(&self, _db: &Db) -> Result<()> {
         Ok(())
     }
 
@@ -509,7 +514,13 @@ pub trait Entity: Serialize + DeserializeOwned {
     fn remove_from_u8_array(key: &[u8], db: &Db) -> Result<()> {
         Self::pre_remove(key, db)?;
         if Self::use_pre_remove_hook() {
-            Self::pre_remove_hook(&Self::get_from_u8_array(key, db)?.ok_or(Error::new(crate::ErrorKind::IntegrityError,"Entry was not found".to_string()))?, db)?;
+            Self::pre_remove_hook(
+                &Self::get_from_u8_array(key, db)?.ok_or(Error::new(
+                    crate::ErrorKind::IntegrityError,
+                    "Entry was not found".to_string(),
+                ))?,
+                db,
+            )?;
         }
         Self::get_tree(db)?.remove(key)?;
         Ok(())
@@ -572,12 +583,11 @@ pub trait Entity: Serialize + DeserializeOwned {
 
     /// Exports the entire store for this entity as a JSON file.
     /// This can be used for saving purposes.
-    fn export_json(f: File, pretty : bool, db: &Db) -> Result<()> {
+    fn export_json(f: File, pretty: bool, db: &Db) -> Result<()> {
         let all = Self::get_all(db)?;
         if pretty {
             serde_json::to_writer_pretty(f, &JsonWrapper::from(all, db)?)?;
-        }
-        else {
+        } else {
             serde_json::to_writer(f, &JsonWrapper::from(all, db)?)?;
         }
         Ok(())
@@ -590,7 +600,7 @@ pub trait Entity: Serialize + DeserializeOwned {
     ///
     /// ⚠ If the structure of the JSON file does not match the Structs used in the app, this will fail with an error.
     fn import_json(f: File, db: &Db) -> Result<()> {
-        let wrapper : JsonWrapper<Self> = serde_json::from_reader(f)?;
+        let wrapper: JsonWrapper<Self> = serde_json::from_reader(f)?;
         wrapper.save(db)?;
         Ok(())
     }
@@ -763,7 +773,11 @@ pub trait Entity: Serialize + DeserializeOwned {
         child: &mut E,
         db: &Db,
     ) -> Result<E::Key> {
-        let increment = match E::get_tree(db)?.scan_prefix(&self.get_key().as_bytes()).flatten().last() {
+        let increment = match E::get_tree(db)?
+            .scan_prefix(&self.get_key().as_bytes())
+            .flatten()
+            .last()
+        {
             Some((key, _)) => {
                 let u32_part = key
                     .iter()
@@ -823,7 +837,10 @@ pub trait Entity: Serialize + DeserializeOwned {
         &self,
         child: &mut E,
         db: &Db,
-    ) -> Result<()>  where <Self as Entity>::Key : PartialEq {
+    ) -> Result<()>
+    where
+        <Self as Entity>::Key: PartialEq,
+    {
         if child.get_key().0 == *self.get_key() {
             return Ok(());
         }
@@ -846,7 +863,7 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// let m_struct_1 = MyStruct1::get(&9,&db)?;
     /// let children : Vec<MyStruct2> = _struct_1.get_children(&db)?;
     /// ```
-    /// Note : Due to [turbofish restrictions](https://github.com/rust-lang/rust/issues/83701), 
+    /// Note : Due to [turbofish restrictions](https://github.com/rust-lang/rust/issues/83701),
     /// `_struct_1.get_children::<MyStruct2>(&db)?` cannot be used [before rust 1.63](https://github.com/rust-lang/rust/issues/83701#issuecomment-1190578601)
     fn get_children<E: Entity<Key = (Self::Key, impl AsBytes)>>(&self, db: &Db) -> Result<Vec<E>> {
         E::get_with_prefix(self.get_key(), db)

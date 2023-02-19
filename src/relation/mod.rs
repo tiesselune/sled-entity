@@ -387,9 +387,9 @@ impl Relation {
     ) -> Result<EntityRelations> {
         let tree = db.open_tree(Relation::tree_name(tree_name))?;
         match tree.get(e)? {
-            Some(relation_descriptor) => {
-                Ok(bincode::deserialize::<EntityRelations>(&relation_descriptor)?)
-            }
+            Some(relation_descriptor) => Ok(bincode::deserialize::<EntityRelations>(
+                &relation_descriptor,
+            )?),
             None => Ok(EntityRelations::default()),
         }
     }

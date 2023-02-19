@@ -1,8 +1,9 @@
 mod test_entities;
 
 use crate::{
-    error::Result, relation::FamilyDescriptor, test::test_entities::GrandChildEntity,
-    AutoIncrementEntity, DeletionBehaviour, Entity, QueryBuilder, entity::AsBytes,
+    entity::AsBytes, error::Result, relation::FamilyDescriptor,
+    test::test_entities::GrandChildEntity, AutoIncrementEntity, DeletionBehaviour, Entity,
+    QueryBuilder,
 };
 use test_entities::{
     set_up, set_up_content, tear_down, ChildEntity1, ChildEntity2, Entity1, Entity2, Entity3,
@@ -461,15 +462,29 @@ fn test_query_builder() -> Result<()> {
     let name = get_random_name();
     let db = set_up(&name)?;
     set_up_content(&db)?;
-    let result = QueryBuilder::new().with_parent(&String::from("id3")).get::<ChildEntity1>(&db)?;
-    assert_eq!(result.len(),3);
-    let result_2 = QueryBuilder::new().with_parent(&String::from("id3")).with_relation_to::<ChildEntity2>(&(2,1)).get::<ChildEntity1>(&db)?;
-    assert_eq!(result_2.len(),1);
-    let child_entity_1 = ChildEntity1::get(&(String::from("id3"),1),&db)?.unwrap();
-    let child_entity_2 = ChildEntity2::get(&(2,1),&db)?.unwrap();
-    child_entity_1.create_relation(&child_entity_2, DeletionBehaviour::BreakLink, DeletionBehaviour::BreakLink, None, &db)?;
-    let result_3 = QueryBuilder::new().with_parent(&String::from("id3")).with_relation_to::<ChildEntity2>(&(2,1)).get::<ChildEntity1>(&db)?;
-    assert_eq!(result_3.len(),2);
+    let result = QueryBuilder::new()
+        .with_parent(&String::from("id3"))
+        .get::<ChildEntity1>(&db)?;
+    assert_eq!(result.len(), 3);
+    let result_2 = QueryBuilder::new()
+        .with_parent(&String::from("id3"))
+        .with_relation_to::<ChildEntity2>(&(2, 1))
+        .get::<ChildEntity1>(&db)?;
+    assert_eq!(result_2.len(), 1);
+    let child_entity_1 = ChildEntity1::get(&(String::from("id3"), 1), &db)?.unwrap();
+    let child_entity_2 = ChildEntity2::get(&(2, 1), &db)?.unwrap();
+    child_entity_1.create_relation(
+        &child_entity_2,
+        DeletionBehaviour::BreakLink,
+        DeletionBehaviour::BreakLink,
+        None,
+        &db,
+    )?;
+    let result_3 = QueryBuilder::new()
+        .with_parent(&String::from("id3"))
+        .with_relation_to::<ChildEntity2>(&(2, 1))
+        .get::<ChildEntity1>(&db)?;
+    assert_eq!(result_3.len(), 2);
     tear_down(&name)?;
     Ok(())
 }
