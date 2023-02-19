@@ -187,13 +187,13 @@ pub trait Entity: Serialize + DeserializeOwned {
     }
 
     #[doc(hidden)]
-    fn from_ivec(vec: IVec) -> Self {
-        bincode::deserialize::<Self>(vec.as_ref()).unwrap()
+    fn try_from_ivec(vec: IVec) -> Result<Self> {
+        Ok(bincode::deserialize::<Self>(vec.as_ref())?)
     }
 
     #[doc(hidden)]
-    fn to_ivec(&self) -> IVec {
-        IVec::from(bincode::serialize(self).unwrap())
+    fn try_into_ivec(&self) -> Result<IVec> {
+        Ok(IVec::from(bincode::serialize(self)?))
     }
 
     /// Retrieves an entity instance given its key.
@@ -223,10 +223,10 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// let entities = MyStruct::get_all(&db)?;
     /// ```
     fn get_all(db: &Db) -> Result<Vec<Self>> {
-        Ok(Self::get_tree(db)?
+        Self::get_tree(db)?
             .iter()
-            .map(|elem| Self::from_ivec(elem.unwrap().1))
-            .collect())
+            .map(|elem| -> Result<Self> { Self::try_from_ivec(elem?.1) })
+            .collect()
     }
 
     /// Returns the number of saved instances for this entity type.
@@ -241,17 +241,17 @@ pub trait Entity: Serialize + DeserializeOwned {
 
     #[doc(hidden)]
     fn get_from_u8_array(key: &[u8], db: &Db) -> Result<Option<Self>> {
-        Ok(Self::get_tree(db)?
+        Self::get_tree(db)?
             .get(key)?
-            .map(|vec| Self::from_ivec(vec)))
+            .map(|vec| -> Result<Self> { Self::try_from_ivec(vec) }).transpose()
     }
 
     #[doc(hidden)]
     fn get_with_prefix(key: &impl AsBytes, db: &Db) -> Result<Vec<Self>> {
-        Ok(Self::get_tree(db)?
+        Self::get_tree(db)?
             .scan_prefix(key.as_bytes())
-            .map(|elem| Self::from_ivec(elem.unwrap().1))
-            .collect())
+            .map(|elem| -> Result<Self> { Self::try_from_ivec(elem?.1)})
+            .collect()
     }
 
     /// Gets entities in a range of keys with a min and max values
@@ -263,10 +263,10 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// let entities = MyStruct::get_in_range(10,30,&db)?;
     /// ```
     fn get_in_range(start: impl AsBytes, end: impl AsBytes, db: &Db) -> Result<Vec<Self>> {
-        Ok(Self::get_tree(db)?
+        Self::get_tree(db)?
             .range(start.as_bytes()..end.as_bytes())
-            .map(|elem| Self::from_ivec(elem.unwrap().1))
-            .collect())
+            .map(|elem| -> Result<Self> { Self::try_from_ivec(elem?.1) })
+            .collect()
     }
 
     /// Gets `count` entities starting at the instance at index `start` in the given store
@@ -299,7 +299,7 @@ pub trait Entity: Serialize + DeserializeOwned {
             match iter.next() {
                 Some(e) => {
                     if i >= start {
-                        result.push(Self::from_ivec(e.unwrap().1));
+                        result.push(Self::try_from_ivec(e?.1)?);
                     }
                 }
                 None => return Ok(result),
@@ -339,7 +339,7 @@ pub trait Entity: Serialize + DeserializeOwned {
             match iter.next_back() {
                 Some(e) => {
                     if i >= start {
-                        result.push(Self::from_ivec(e.unwrap().1));
+                        result.push(Self::try_from_ivec(e?.1)?);
                     }
                 }
                 None => break,
@@ -359,11 +359,11 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// let entities = MyStruct::get_with_filter(|m_struct| m_struct.prop > 20,&db)?;
     /// ```
     fn get_with_filter<F: Fn(&Self) -> bool>(f: F, db: &Db) -> Result<Vec<Self>> {
-        Ok(Self::get_tree(db)?
+        Self::get_tree(db)?
             .iter()
-            .map(|elem| Self::from_ivec(elem.unwrap().1))
-            .filter(|e| f(e))
-            .collect())
+            .map(|elem| -> Result<Self> { Self::try_from_ivec(elem?.1) })
+            .filter(|e| match e { Ok(v) => f(v), Err(_) => false})
+            .collect()
     }
 
     /// Gets several entites matching a collection of keys
@@ -406,7 +406,7 @@ pub trait Entity: Serialize + DeserializeOwned {
     fn save(&self, db: &Db) -> Result<()> {
         Self::get_tree(db)?.insert(
             &self.get_key().as_bytes(),
-            bincode::serialize(self).unwrap(),
+            bincode::serialize(self)?,
         )?;
         Ok(())
     }
@@ -420,11 +420,11 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// ```
     fn update<F: Fn(&mut Self)>(key: &Self::Key, f: F, db: &Db) -> Result<()> {
         Self::get_tree(db)?.fetch_and_update(&key.as_bytes(), |e| {
-            e.map(|u8_arr| {
-                let mut value: Self = Self::from_ivec(IVec::from(u8_arr));
+            Result::ok(e.map(|u8_arr| -> Result<IVec> {
+                let mut value = Self::try_from_ivec(IVec::from(u8_arr))?;
                 f(&mut value);
-                value.to_ivec()
-            })
+                value.try_into_ivec()
+            }).transpose()).flatten()
         })?;
         Ok(())
     }
