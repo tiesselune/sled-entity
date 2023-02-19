@@ -388,7 +388,7 @@ impl Relation {
         let tree = db.open_tree(Relation::tree_name(tree_name))?;
         match tree.get(e)? {
             Some(relation_descriptor) => {
-                Ok(bincode::deserialize::<EntityRelations>(&relation_descriptor).unwrap())
+                Ok(bincode::deserialize::<EntityRelations>(&relation_descriptor)?)
             }
             None => Ok(EntityRelations::default()),
         }
@@ -404,7 +404,7 @@ impl Relation {
 
     fn save_descriptor_with_key<E: Entity>(e: &[u8], r_d: &EntityRelations, db: &Db) -> Result<()> {
         let tree = db.open_tree(Relation::tree_name(E::store_name()))?;
-        tree.insert(e, bincode::serialize(r_d).unwrap())?;
+        tree.insert(e, bincode::serialize(r_d)?)?;
         Ok(())
     }
 
@@ -413,9 +413,9 @@ impl Relation {
         e: &[u8],
         r_d: &EntityRelations,
         db: &Db,
-    ) -> std::io::Result<()> {
+    ) -> Result<()> {
         let tree = db.open_tree(Relation::tree_name(tree_name))?;
-        tree.insert(e, bincode::serialize(r_d).unwrap())?;
+        tree.insert(e, bincode::serialize(r_d)?)?;
         Ok(())
     }
 
