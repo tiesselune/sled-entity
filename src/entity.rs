@@ -532,6 +532,16 @@ pub trait Entity: Serialize + DeserializeOwned {
     }
 
     #[doc(hidden)]
+    fn bytes_to_u32( bytes : &[u8]) -> Result<u32> {
+        if bytes.len() >= 4 {
+            Ok(u32::from_be_bytes([bytes[0],bytes[1],bytes[2],bytes[3]]))
+        }
+        else {
+            Err(Error::new(crate::error::ErrorKind::IOError, "Cannot convert byte slice smaller than 4 bytes to integer.".to_string()))
+        }
+    }
+
+    #[doc(hidden)]
     fn remove_prefixed_in_tree(tree_name: &str, prefix: &[u8], db: &Db) -> Result<()> {
         let tree = db.open_tree(tree_name)?;
         let mut batch = Batch::default();
@@ -773,6 +783,7 @@ pub trait Entity: Serialize + DeserializeOwned {
         child: &mut E,
         db: &Db,
     ) -> Result<E::Key> {
+        
         let increment = match E::get_tree(db)?
             .scan_prefix(&self.get_key().as_bytes())
             .flatten()
@@ -786,7 +797,7 @@ pub trait Entity: Serialize + DeserializeOwned {
                     .rev()
                     .copied()
                     .collect::<Vec<u8>>();
-                u32::from_be_bytes(u32_part.try_into().unwrap()) + 1
+                Self::bytes_to_u32(&u32_part)? + 1
             }
             _ => Default::default(),
         };
@@ -897,7 +908,7 @@ where
 {
     fn get_next_key(db: &Db) -> Result<u32> {
         match Self::get_tree(db)?.last()? {
-            Some((key, _)) => Ok(u32::from_be_bytes(key.as_ref().try_into().unwrap()) + 1),
+            Some((key, _)) => Ok(Self::bytes_to_u32(key.as_ref())? + 1),
             None => Ok(Default::default()),
         }
     }
