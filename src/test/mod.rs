@@ -1,7 +1,7 @@
 mod test_entities;
 
 use crate::{
-    entity::AsBytes, error::Result, relation::FamilyDescriptor,
+    error::Result, relation::FamilyDescriptor,
     test::test_entities::GrandChildEntity, AutoIncrementEntity, DeletionBehaviour, Entity,
     QueryBuilder,
 };

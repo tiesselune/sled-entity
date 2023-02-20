@@ -10,7 +10,6 @@ use crate::relation::{DeletionBehaviour, EntityRelations, FamilyDescriptor, Rela
 use crate::Error;
 use serde::{de::DeserializeOwned, Serialize};
 use sled::{Batch, Db, IVec, Tree};
-use std::convert::TryInto;
 
 /// The `Entity` trait provides document store capabilities for any struct that implements it.
 ///
