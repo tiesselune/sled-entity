@@ -5,3 +5,12 @@ members = [
     "reindeer-core",
     "reindeer-macros",
 ]
+
+[workspace.package]
+version = "0.3.0"
+description = "A small entity-based embedded database with a minimal no-SQL relationnal model, written in pure Rust."
+license = "MIT"
+readme = "Readme.md"
+repository = "https://github.com/tiesselune/reindeer-rs"
+keywords = ["sled","database","entity","rocksdb","bincode"]
+categories = ["database","filesystem"]

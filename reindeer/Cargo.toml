@@ -1,8 +1,15 @@
 [package]
 name = "reindeer"
-version = "0.3.0"
+version.workspace = true
+description.workspace = true
+repository.workspace = true
+readme.workspace = true
+license.workspace = true
+categories.workspace = true
+keywords.workspace = true
 edition = "2021"
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+reindeer-core = {path = "../reindeer-core"}
+reindeer-macros = {path = "../reindeer-macros"}

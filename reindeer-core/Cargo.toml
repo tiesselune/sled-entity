@@ -1,13 +1,13 @@
 [package]
 name = "reindeer-core"
-version = "0.3.0"
 edition = "2021"
-description = "A small entity-based embedded database with a minimal no-SQL relationnal model, written in pure Rust."
-license = "MIT"
-readme = "Readme.md"
-repository = "https://github.com/tiesselune/reindeer-rs"
-keywords = ["sled","database","entity","rocksdb","bincode"]
-categories = ["database","filesystem"]
+version.workspace = true
+description.workspace = true
+repository.workspace = true
+readme.workspace = true
+license.workspace = true
+categories.workspace = true
+keywords.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
