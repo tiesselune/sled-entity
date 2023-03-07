@@ -2,13 +2,11 @@ use crate::error::Result;
 use crate::AutoIncrementEntity;
 use serde_derive::{Deserialize, Serialize};
 use sled::Db;
-use reindeer_macros::entity;
 
 use crate::DeletionBehaviour;
 use crate::Entity;
 
 #[derive(Serialize, Deserialize)]
-#[entity]
 pub struct Entity1 {
     pub id: u32,
     pub prop1: String,
