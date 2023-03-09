@@ -9,7 +9,7 @@ pub struct EntityStructureData {
     name : Option<String>,
     version : Option<u32>,
     id : IdStructure,
-    children : Vec<String>,
-    siblings : Vec<String>,
+    children : Vec<(String,String)>,
+    siblings : Vec<(String,String)>,
     fields : Vec<(String,String)>,
 }

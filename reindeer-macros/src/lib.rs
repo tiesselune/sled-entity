@@ -28,7 +28,7 @@ fn construct_token_stream(input : &DeriveInput, errors : &mut Errors) -> TokenSt
         syn::Data::Struct(s) => {
             let attr_copy = attributes.clone();
             result.extend([
-                generate_alias(&attributes.name.unwrap_or(input.ident.to_string()), attributes.version.unwrap_or(0), &input.vis),
+                generate_alias(&input.ident, attributes.version.unwrap_or(0), &input.vis),
                 generate_impl(s, &attr_copy, errors),
             ])
         },
@@ -38,13 +38,13 @@ fn construct_token_stream(input : &DeriveInput, errors : &mut Errors) -> TokenSt
     result
 }
 
-fn generate_alias(name : &str,version : u32, vis : &Visibility) -> TokenStream {
+fn generate_alias(name : &Ident,version : u32, vis : &Visibility) -> TokenStream {
     let versionned_ident = Ident::new(&format!("{}_v{}",name.to_string(),version), Span::call_site());
     quote ! {
-        #vis #versionned_ident = #name;
+        #vis type #versionned_ident = #name;
     }.into()
 }
 
 fn generate_impl(s : &DataStruct,attribute_data : &EntityAttributeData, errors : &mut Errors) -> TokenStream {
-    todo!()
+    TokenStream::new()
 }
