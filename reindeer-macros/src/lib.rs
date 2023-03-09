@@ -1,7 +1,7 @@
 mod attr;
 mod structure;
 
-use attr::EntityAttributeData;
+use attr::EntityData;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use syn::{parse_macro_input, DeriveInput, DataStruct, Visibility};
@@ -23,9 +23,10 @@ pub fn derive_entity(item : TokenStream) -> TokenStream {
 
 fn construct_token_stream(input : &DeriveInput, errors : &mut Errors) -> TokenStream {
     let mut result = TokenStream::new();
-    let attributes = EntityAttributeData::parse(&input.attrs, errors);
+    
     match &input.data {
         syn::Data::Struct(s) => {
+            let attributes = EntityData::parse(&input.attrs,&s.fields, errors);
             let attr_copy = attributes.clone();
             result.extend([
                 generate_alias(&input.ident, attributes.version.unwrap_or(0), &input.vis),
@@ -45,6 +46,6 @@ fn generate_alias(name : &Ident,version : u32, vis : &Visibility) -> TokenStream
     }.into()
 }
 
-fn generate_impl(s : &DataStruct,attribute_data : &EntityAttributeData, errors : &mut Errors) -> TokenStream {
+fn generate_impl(s : &DataStruct,attribute_data : &EntityData, errors : &mut Errors) -> TokenStream {
     TokenStream::new()
 }

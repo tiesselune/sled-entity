@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use syn::{Attribute, Meta,TypeTuple, Ident};
+use syn::{Attribute, Meta,TypeTuple, Ident, Field, Fields};
 use crate::Errors;
 use proc_macro2::{Span, TokenStream};
 
@@ -13,17 +13,18 @@ pub enum IdStructure {
 }
 
 #[derive(Default,Clone)]
-pub struct EntityAttributeData {
+pub struct EntityData {
     pub name : Option<String>,
     pub version : Option<u32>,
     pub id : Option<IdStructure>,
     pub children : Vec<(syn::Ident,syn::Ident)>,
     pub siblings : Vec<(syn::Ident,syn::Ident)>,
+    pub fields : Vec<(syn::Ident,syn::Type)>,
 }
 
-impl EntityAttributeData {
-    pub fn parse(attrs : &[Attribute], errors : &mut Errors) -> EntityAttributeData {
-        let mut attribute_data = EntityAttributeData::default();
+impl EntityData {
+    pub fn parse(attrs : &[Attribute], fields : &Fields, errors : &mut Errors) -> EntityData {
+        let mut attribute_data = EntityData::default();
         for attr in attrs {
             if attr.path.is_ident("entity") {
                 match attr.parse_meta(){
@@ -61,7 +62,7 @@ impl EntityAttributeData {
         attribute_data
     }
 
-    fn parse_entity_args(meta : &Meta, attribute_data : &mut EntityAttributeData, errors : &mut Errors) {
+    fn parse_entity_args(meta : &Meta, attribute_data : &mut EntityData, errors : &mut Errors) {
         match meta {
             Meta::Path(p) => {
                 errors.push(syn::Error::new_spanned(p, "Unrecognized argument 1"));
@@ -123,7 +124,7 @@ impl EntityAttributeData {
         }
     }
 
-    fn parse_id_attr(str : &str, span : &Span, attribute_data : &mut EntityAttributeData, errors : &mut Errors){
+    fn parse_id_attr(str : &str, span : &Span, attribute_data : &mut EntityData, errors : &mut Errors){
         let tokens = TokenStream::from_str(str);
         match tokens {
             Ok(tokens) => {
@@ -174,4 +175,5 @@ impl EntityAttributeData {
         }
         IdStructure::Tuple(result)
     }
+
 }
