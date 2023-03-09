@@ -33,6 +33,24 @@ impl EntityAttributeData {
                     Err(e) => errors.push(e),
                 }
             }
+            else if attr.path.is_ident("entity_id") {
+                match attr.parse_args::<TypeTuple>() {
+                    Ok(v) => {
+                        attribute_data.id = Some(Self::parse_id_tuple(&v, errors));
+                    },
+                    Err(e) => {
+                        match attr.parse_args::<Ident>() {
+                            Ok(i) => {
+                                attribute_data.id = Some(IdStructure::Simple(i));
+                            },
+                            Err(_) => {
+                                errors.push(syn::Error::new_spanned(attr, ID_PARSE_ERROR));
+                            }
+                        }
+                        
+                    },
+                }
+            }
             else if attr.path.is_ident("children") {
 
             }

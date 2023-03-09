@@ -10,7 +10,7 @@ use syn::Ident;
 
 type Errors = Vec<syn::Error>;
 
-#[proc_macro_derive(Entity, attributes(entity,siblings,children))]
+#[proc_macro_derive(Entity, attributes(entity,entity_id,siblings,children))]
 pub fn derive_entity(item : TokenStream) -> TokenStream {
     let ast = parse_macro_input!(item as DeriveInput);
     let mut errors = Vec::new();
