@@ -24,12 +24,12 @@ pub struct EntityData {
 
 impl EntityData {
     pub fn parse(attrs : &[Attribute], fields : &Fields, errors : &mut Errors) -> EntityData {
-        let mut attribute_data = EntityData::default();
+        let mut entity_data = EntityData::default();
         for attr in attrs {
             if attr.path.is_ident("entity") {
                 match attr.parse_meta(){
                     Ok(meta) => {
-                        Self::parse_entity_args(&meta, &mut attribute_data, errors);
+                        Self::parse_entity_args(&meta, &mut entity_data, errors);
                     },
                     Err(e) => errors.push(e),
                 }
@@ -37,12 +37,12 @@ impl EntityData {
             else if attr.path.is_ident("entity_id") {
                 match attr.parse_args::<TypeTuple>() {
                     Ok(v) => {
-                        attribute_data.id = Some(Self::parse_id_tuple(&v, errors));
+                        entity_data.id = Some(Self::parse_id_tuple(&v, errors));
                     },
                     Err(e) => {
                         match attr.parse_args::<Ident>() {
                             Ok(i) => {
-                                attribute_data.id = Some(IdStructure::Simple(i));
+                                entity_data.id = Some(IdStructure::Simple(i));
                             },
                             Err(_) => {
                                 errors.push(syn::Error::new_spanned(attr, ID_PARSE_ERROR));
@@ -59,10 +59,10 @@ impl EntityData {
                 
             }
         }
-        attribute_data
+        entity_data
     }
 
-    fn parse_entity_args(meta : &Meta, attribute_data : &mut EntityData, errors : &mut Errors) {
+    fn parse_entity_args(meta : &Meta, entity_data : &mut EntityData, errors : &mut Errors) {
         match meta {
             Meta::Path(p) => {
                 errors.push(syn::Error::new_spanned(p, "Unrecognized argument 1"));
@@ -71,7 +71,7 @@ impl EntityData {
                 for token in &l.nested {
                     match token {
                         syn::NestedMeta::Meta(m) => {
-                            Self::parse_entity_args(m, attribute_data, errors);
+                            Self::parse_entity_args(m, entity_data, errors);
                         },
                         syn::NestedMeta::Lit(l) => {
                             errors.push(syn::Error::new_spanned(l, "Unrecognized argument 2"));
@@ -83,7 +83,7 @@ impl EntityData {
                 if nv.path.is_ident("name") {
                     match &nv.lit {
                         syn::Lit::Str(str) => {
-                            attribute_data.name = Some(str.value());
+                            entity_data.name = Some(str.value());
                         },
                         _ => {
                             errors.push(syn::Error::new_spanned(&nv.lit, "Store name must be a string."))
@@ -95,7 +95,7 @@ impl EntityData {
                         syn::Lit::Int(int) => {
                             match int.base10_parse::<u32>() {
                                 Ok(int) => {
-                                    attribute_data.version = Some(int);
+                                    entity_data.version = Some(int);
                                 },
                                 Err(_) => {
                                     errors.push(syn::Error::new_spanned(&int, "Store version must be a positive integer."))
@@ -110,7 +110,7 @@ impl EntityData {
                 else if nv.path.is_ident("id") {
                     match &nv.lit {
                         syn::Lit::Str(str) => {
-                            Self::parse_id_attr(&str.value(), &str.span(), attribute_data, errors);
+                            Self::parse_id_attr(&str.value(), &str.span(), entity_data, errors);
                         },
                         _ => {
                             errors.push(syn::Error::new_spanned(&nv.lit, "Store name must be a string."))
@@ -124,19 +124,19 @@ impl EntityData {
         }
     }
 
-    fn parse_id_attr(str : &str, span : &Span, attribute_data : &mut EntityData, errors : &mut Errors){
+    fn parse_id_attr(str : &str, span : &Span, entity_data : &mut EntityData, errors : &mut Errors){
         let tokens = TokenStream::from_str(str);
         match tokens {
             Ok(tokens) => {
                 let ident = syn::parse::<Ident>(tokens.clone().into());
                 match ident {
                     Ok(ident) => {
-                        attribute_data.id = Some(IdStructure::Simple(ident.into()));
+                        entity_data.id = Some(IdStructure::Simple(ident.into()));
                     },
                     Err(_)=> {
                         match syn::parse::<syn::TypeTuple>(tokens.into()) {
                             Ok(tuple) => {
-                                attribute_data.id = Some(Self::parse_id_tuple(&tuple, errors));
+                                entity_data.id = Some(Self::parse_id_tuple(&tuple, errors));
                             },
                             Err(_) => {
                                 errors.push(syn::Error::new(span.to_owned(), ID_PARSE_ERROR))

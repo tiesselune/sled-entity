@@ -26,10 +26,10 @@ fn construct_token_stream(input : &DeriveInput, errors : &mut Errors) -> TokenSt
     
     match &input.data {
         syn::Data::Struct(s) => {
-            let attributes = EntityData::parse(&input.attrs,&s.fields, errors);
-            let attr_copy = attributes.clone();
+            let entity_data = EntityData::parse(&input.attrs,&s.fields, errors);
+            let attr_copy = entity_data.clone();
             result.extend([
-                generate_alias(&input.ident, attributes.version.unwrap_or(0), &input.vis),
+                generate_alias(&input.ident, entity_data.version.unwrap_or(0), &input.vis),
                 generate_impl(s, &attr_copy, errors),
             ])
         },
@@ -46,6 +46,6 @@ fn generate_alias(name : &Ident,version : u32, vis : &Visibility) -> TokenStream
     }.into()
 }
 
-fn generate_impl(s : &DataStruct,attribute_data : &EntityData, errors : &mut Errors) -> TokenStream {
+fn generate_impl(s : &DataStruct,entity_data : &EntityData, errors : &mut Errors) -> TokenStream {
     TokenStream::new()
 }
