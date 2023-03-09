@@ -8,7 +8,7 @@ use crate::DeletionBehaviour;
 use crate::Entity;
 
 #[derive(Serialize, Deserialize,Entity)]
-#[entity(name = "entity_1",version = 1)]
+#[entity(name = "entity_1",version = 1, id = "(id,lol,(lol,il))")]
 pub struct Entity1 {
     pub id: u32,
     pub prop1: String,

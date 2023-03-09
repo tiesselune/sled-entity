@@ -1,7 +1,7 @@
 #[derive(PartialEq, Eq)]
 enum IdStructure {
     Simple(String),
-    Tuple(Box<(IdStructure,IdStructure)>)
+    Tuple(Vec<IdStructure>)
 }
 
 #[derive(PartialEq, Eq)]

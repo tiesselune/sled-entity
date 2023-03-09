@@ -1,11 +1,15 @@
-use proc_macro::Ident;
-use syn::{Attribute, Meta};
+use std::str::FromStr;
+
+use syn::{Attribute, Meta,TypeTuple, Ident};
 use crate::Errors;
+use proc_macro2::{Span, TokenStream};
+
+const ID_PARSE_ERROR : &'static str = "Could not parse id parameter. id must be a string containing either a field name, or a tuple of field names.";
 
 #[derive(Clone)]
 pub enum IdStructure {
-    Simple(Ident),
-    Tuple(Box<(IdStructure,IdStructure)>)
+    Simple(syn::Ident),
+    Tuple(Vec<IdStructure>)
 }
 
 #[derive(Default,Clone)]
@@ -13,8 +17,8 @@ pub struct EntityAttributeData {
     pub name : Option<String>,
     pub version : Option<u32>,
     pub id : Option<IdStructure>,
-    pub children : Vec<Ident>,
-    pub siblings : Vec<Ident>,
+    pub children : Vec<(syn::Ident,syn::Ident)>,
+    pub siblings : Vec<(syn::Ident,syn::Ident)>,
 }
 
 impl EntityAttributeData {
@@ -42,7 +46,7 @@ impl EntityAttributeData {
     fn parse_entity_args(meta : &Meta, attribute_data : &mut EntityAttributeData, errors : &mut Errors) {
         match meta {
             Meta::Path(p) => {
-                errors.push(syn::Error::new_spanned(p, "Unrecognized argument"));
+                errors.push(syn::Error::new_spanned(p, "Unrecognized argument 1"));
             },
             Meta::List(l) => {
                 for token in &l.nested {
@@ -51,7 +55,7 @@ impl EntityAttributeData {
                             Self::parse_entity_args(m, attribute_data, errors);
                         },
                         syn::NestedMeta::Lit(l) => {
-                            errors.push(syn::Error::new_spanned(l, "Unrecognized argument"));
+                            errors.push(syn::Error::new_spanned(l, "Unrecognized argument 2"));
                         },
                     }
                 }
@@ -85,9 +89,71 @@ impl EntityAttributeData {
                     }
                 }
                 else if nv.path.is_ident("id") {
-                    
+                    match &nv.lit {
+                        syn::Lit::Str(str) => {
+                            Self::parse_id_attr(&str.value(), &str.span(), attribute_data, errors);
+                        },
+                        _ => {
+                            errors.push(syn::Error::new_spanned(&nv.lit, "Store name must be a string."))
+                        }
+                    }
+                }
+                else {
+                    errors.push(syn::Error::new_spanned(&nv.path, "Unknown parameter"))
                 }
             },
         }
+    }
+
+    fn parse_id_attr(str : &str, span : &Span, attribute_data : &mut EntityAttributeData, errors : &mut Errors){
+        let tokens = TokenStream::from_str(str);
+        match tokens {
+            Ok(tokens) => {
+                let ident = syn::parse::<Ident>(tokens.clone().into());
+                match ident {
+                    Ok(ident) => {
+                        attribute_data.id = Some(IdStructure::Simple(ident.into()));
+                    },
+                    Err(_)=> {
+                        match syn::parse::<syn::TypeTuple>(tokens.into()) {
+                            Ok(tuple) => {
+                                attribute_data.id = Some(Self::parse_id_tuple(&tuple, errors));
+                            },
+                            Err(_) => {
+                                errors.push(syn::Error::new(span.to_owned(), ID_PARSE_ERROR))
+                            }
+                        }
+                    }
+                }
+            },
+            Err(_) => {
+                errors.push(syn::Error::new(span.to_owned(), ID_PARSE_ERROR))
+            }
+        }
+        
+    }
+    
+    fn parse_id_tuple(tuple : &TypeTuple, errors : &mut Errors) -> IdStructure {
+        let mut result = Vec::new();
+        for elem in &tuple.elems {
+            match elem {
+                syn::Type::Path(p) => {
+                    if p.path.segments.len() == 1 {
+                        result.push(IdStructure::Simple(p.path.segments[0].ident.clone()));
+                    }
+                    else {
+                        errors.push(syn::Error::new_spanned(p, "Elements must be field names, or tuples of field names."))
+                    }
+                },
+                syn::Type::Tuple(t) => {
+                    result.push(Self::parse_id_tuple(t,errors));
+                },
+                _ => errors.push(syn::Error::new_spanned(elem, "Elements must be field names, or tuples of field names.")),
+            }
+        }
+        if result.len() == 0 {
+            errors.push(syn::Error::new_spanned(tuple, "Could not parse id parameter. id must be a string containing either a field name, or a tuple of field names."))
+        }
+        IdStructure::Tuple(result)
     }
 }
