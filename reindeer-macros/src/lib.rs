@@ -1,33 +1,50 @@
+mod attr;
+mod structure;
+
+use attr::EntityAttributeData;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use syn::ItemStruct;
-use quote::{quote,ToTokens};
+use syn::{parse_macro_input, DeriveInput, DataStruct, Visibility};
+use quote::quote;
 use syn::Ident;
-use std::fs::{write,create_dir_all};
-use std::path::PathBuf;
 
-#[proc_macro_attribute]
-pub fn entity(args : TokenStream, item : TokenStream) -> TokenStream {
-    let ast: Result<ItemStruct,syn::Error> = syn::parse(item);
-    if let Err(_) = ast {
-        let content : TokenStream = quote! {
-            compile_error!("'entity' can only be applied on a valid struct.");
-        }.to_token_stream().into();
-        //content.extend([item]);
-        return content;
+type Errors = Vec<syn::Error>;
+
+#[proc_macro_derive(Entity, attributes(entity,siblings,children))]
+pub fn derive_entity(item : TokenStream) -> TokenStream {
+    let ast = parse_macro_input!(item as DeriveInput);
+    let mut errors = Vec::new();
+    let mut result = construct_token_stream(&ast, &mut errors);
+    if errors.len() > 0 {
+        result.extend::<TokenStream>(errors.iter().map(|e| Into::<TokenStream>::into(e.to_compile_error())).collect());
     }
-    let ast = ast.unwrap();
-    let struct_name = ast.ident.clone();
-    let versionned_name = Ident::new(&format!("{}_v{}",struct_name,1), Span::call_site());
-    let dir = env!("CARGO_MANIFEST_DIR");
-    let mut migrations_dir = PathBuf::new();
-    migrations_dir.push(dir);
-    migrations_dir.push("schema");
-    create_dir_all(&migrations_dir).unwrap();
-    migrations_dir.push(&format!("{}_v{}.json",struct_name,1));
-    write(&migrations_dir,"Hello, world!").unwrap();
-    quote! {
-        #ast
-        type #versionned_name = #struct_name;
-    }.into_token_stream().into()
+    result
+}
+
+fn construct_token_stream(input : &DeriveInput, errors : &mut Errors) -> TokenStream {
+    let mut result = TokenStream::new();
+    let attributes = EntityAttributeData::parse(&input.attrs, errors);
+    match &input.data {
+        syn::Data::Struct(s) => {
+            let attr_copy = attributes.clone();
+            result.extend([
+                generate_alias(&attributes.name.unwrap_or(input.ident.to_string()), attributes.version.unwrap_or(0), &input.vis),
+                generate_impl(s, &attr_copy, errors),
+            ])
+        },
+        syn::Data::Enum(_) => errors.push(syn::Error::new_spanned(input, "Cannot derive Entity on an enum. Please implement Entity manually.")),
+        syn::Data::Union(_) => errors.push(syn::Error::new_spanned(input, "Cannot derive Entity on a union. Please implement Entity manually.")),
+    }
+    result
+}
+
+fn generate_alias(name : &str,version : u32, vis : &Visibility) -> TokenStream {
+    let versionned_ident = Ident::new(&format!("{}_v{}",name.to_string(),version), Span::call_site());
+    quote ! {
+        #vis #versionned_ident = #name;
+    }.into()
+}
+
+fn generate_impl(s : &DataStruct,attribute_data : &EntityAttributeData, errors : &mut Errors) -> TokenStream {
+    todo!()
 }
