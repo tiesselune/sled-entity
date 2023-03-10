@@ -3,7 +3,7 @@ use quote::ToTokens;
 use syn::{parse::Parse, parenthesized, punctuated::Punctuated, Token, LitStr};
 
 #[derive(Clone)]
-pub struct Relation(syn::LitStr,syn::Ident);
+pub struct Relation(pub syn::LitStr,pub syn::Ident);
 
 impl Parse for Relation {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
@@ -32,7 +32,7 @@ impl Parse for Relation {
 }
 
 #[derive(Default,Clone)]
-pub struct Relations(Vec<Relation>);
+pub struct Relations(pub Vec<Relation>);
 
 impl Parse for Relations {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {

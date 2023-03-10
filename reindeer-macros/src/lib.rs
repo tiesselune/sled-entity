@@ -51,7 +51,14 @@ fn generate_impl(struct_name : &Ident,entity_data : &EntityData) -> TokenStream 
 
     if let (Some(store_name),Some(id_field),Some(key_type),crate_name) = (&entity_data.name,&entity_data.id,&entity_data.id_type,&entity_data.crate_name) {
         let crate_name = Ident::new(crate_name,Span::call_site());
-        let children = &entity_data.children;
+        let children : Vec<proc_macro2::TokenStream> = entity_data.children.0.iter().map(|e| {
+            let (name,deletion) = (e.0.clone(),e.1.clone());
+            quote!{(#name,#crate_name::DeletionBehaviour::#deletion)}
+        }).collect();
+        let siblings: Vec<proc_macro2::TokenStream> = entity_data.siblings.0.iter().map(|e| {
+            let (name,deletion) = (e.0.clone(),e.1.clone());
+            quote!{(#name,#crate_name::DeletionBehaviour::#deletion)}
+        }).collect();
         quote!{
             impl #crate_name::Entity for #struct_name {
                 type Key = #key_type;
@@ -65,10 +72,10 @@ fn generate_impl(struct_name : &Ident,entity_data : &EntityData) -> TokenStream 
                     self.#id_field = key.clone();
                 }
                 fn get_child_stores() -> Vec<(&'static str, #crate_name::DeletionBehaviour)> {
-                    vec![]
+                    vec![#(#children)*]
                 }
                 fn get_sibling_stores() -> Vec<(&'static str, #crate_name::DeletionBehaviour)> {
-                    vec![]
+                    vec![#(#siblings)*]
                 }
             }
         }.into()
