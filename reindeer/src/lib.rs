@@ -40,6 +40,8 @@ mod query_builder;
 mod relation;
 pub use entity::AutoIncrementEntity;
 pub use entity::{AsBytes, Entity};
+pub use reindeer_macros::Entity;
+
 pub use query_builder::*;
 pub use relation::DeletionBehaviour;
 pub use serde_derive::{Deserialize, Serialize};
