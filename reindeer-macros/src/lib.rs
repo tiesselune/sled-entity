@@ -30,7 +30,7 @@ fn construct_token_stream(input : &DeriveInput, errors : &mut Errors) -> TokenSt
             let attr_copy = entity_data.clone();
             result.extend([
                 generate_alias(&input.ident, entity_data.version.unwrap_or(0), &input.vis),
-                generate_impl(s, &attr_copy, errors),
+                generate_impl(&input.ident, &input.ident, &attr_copy, errors),
             ])
         },
         syn::Data::Enum(_) => errors.push(syn::Error::new_spanned(input, "Cannot derive Entity on an enum. Please implement Entity manually.")),
@@ -46,6 +46,24 @@ fn generate_alias(name : &Ident,version : u32, vis : &Visibility) -> TokenStream
     }.into()
 }
 
-fn generate_impl(s : &DataStruct,entity_data : &EntityData, errors : &mut Errors) -> TokenStream {
-    TokenStream::new()
+fn generate_impl(trait_name : &Ident, struct_name : &Ident,entity_data : &EntityData, errors : &mut Errors) -> TokenStream {
+    let entity_data = entity_data.clone();
+    let store_name = entity_data.name.unwrap();
+    let id_field = entity_data.id.unwrap();
+    let key_type = entity_data.id_type.unwrap();
+    let result : TokenStream = quote!{
+        impl Entity for #struct_name {
+            type Key = #key_type;
+            fn store_name() -> &'static str {
+                #store_name
+            }
+            fn get_key(&self) -> &Self::Key {
+                &self.#id_field
+            }
+            fn set_key(&mut self, key : &Self::Key) {
+                self.#id_field = key.clone();
+            }
+        }
+    }.into();
+    result
 }

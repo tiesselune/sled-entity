@@ -6,17 +6,12 @@ use proc_macro2::{Span, TokenStream};
 
 const ID_PARSE_ERROR : &'static str = "Could not parse id parameter. id must be a string containing either a field name, or a tuple of field names.";
 
-#[derive(Clone)]
-pub enum IdStructure {
-    Simple(syn::Ident),
-    Tuple(Vec<IdStructure>)
-}
-
 #[derive(Default,Clone)]
 pub struct EntityData {
     pub name : Option<String>,
     pub version : Option<u32>,
-    pub id : Option<IdStructure>,
+    pub id : Option<Ident>,
+    pub id_type : Option<syn::Type>,
     pub children : Vec<(syn::Ident,syn::Ident)>,
     pub siblings : Vec<(syn::Ident,syn::Ident)>,
     pub fields : Vec<(syn::Visibility,syn::Ident,syn::Type)>,
@@ -33,24 +28,6 @@ impl EntityData {
                         entity_data.parse_entity_args(&meta, errors);
                     },
                     Err(e) => errors.push(e),
-                }
-            }
-            else if attr.path.is_ident("entity_id") {
-                match attr.parse_args::<TypeTuple>() {
-                    Ok(v) => {
-                        entity_data.id = Some(Self::parse_id_tuple(&v, errors));
-                    },
-                    Err(_) => {
-                        match attr.parse_args::<Ident>() {
-                            Ok(i) => {
-                                entity_data.id = Some(IdStructure::Simple(i));
-                            },
-                            Err(_) => {
-                                errors.push(syn::Error::new_spanned(attr, ID_PARSE_ERROR));
-                            }
-                        }
-                        
-                    },
                 }
             }
             else if attr.path.is_ident("children") {
@@ -133,17 +110,10 @@ impl EntityData {
                 let ident = syn::parse::<Ident>(tokens.clone().into());
                 match ident {
                     Ok(ident) => {
-                        self.id = Some(IdStructure::Simple(ident.into()));
+                        self.id = Some(ident);
                     },
                     Err(_)=> {
-                        match syn::parse::<syn::TypeTuple>(tokens.into()) {
-                            Ok(tuple) => {
-                                self.id = Some(Self::parse_id_tuple(&tuple, errors));
-                            },
-                            Err(_) => {
-                                errors.push(syn::Error::new(span.to_owned(), ID_PARSE_ERROR))
-                            }
-                        }
+                        errors.push(syn::Error::new(span.to_owned(), ID_PARSE_ERROR))
                     }
                 }
             },
@@ -152,30 +122,6 @@ impl EntityData {
             }
         }
         
-    }
-    
-    fn parse_id_tuple(tuple : &TypeTuple, errors : &mut Errors) -> IdStructure {
-        let mut result = Vec::new();
-        for elem in &tuple.elems {
-            match elem {
-                syn::Type::Path(p) => {
-                    if p.path.segments.len() == 1 {
-                        result.push(IdStructure::Simple(p.path.segments[0].ident.clone()));
-                    }
-                    else {
-                        errors.push(syn::Error::new_spanned(p, "Elements must be field names, or tuples of field names."))
-                    }
-                },
-                syn::Type::Tuple(t) => {
-                    result.push(Self::parse_id_tuple(t,errors));
-                },
-                _ => errors.push(syn::Error::new_spanned(elem, "Elements must be field names, or tuples of field names.")),
-            }
-        }
-        if result.len() == 0 {
-            errors.push(syn::Error::new_spanned(tuple, "Could not parse id parameter. id must be a string containing either a field name, or a tuple of field names."))
-        }
-        IdStructure::Tuple(result)
     }
 
     fn parse_fields(&mut self, fields : &Fields, errors : &mut Errors) {
@@ -195,31 +141,29 @@ impl EntityData {
             None => {
                 let id_field = self.fields.iter().find(|e| e.1.to_string() == "id");
                 if let Some(id_field) = id_field {
-                    self.id = Some(IdStructure::Simple(id_field.1.clone()));
+                    self.id = Some(id_field.1.clone());
+                    self.id_type = Some(id_field.2.clone());
                 }
                 else {
                     errors.push(syn::Error::new(span.to_owned(), "Missing ID specification. Use either a field called  `id`, the `id` macro meta, or the `entity_id` attribute."));
                 }
             },
             Some(id) => {
-                self.check_id(id, errors);
+                self.check_id(&id.clone(), errors);
             }
         }
 
 
     }
-    fn check_id(&self, id_struct : &IdStructure, errors : &mut Errors) {
-        match id_struct {
-            IdStructure::Simple(ident) => {
-                if self.fields.iter().find(|e| e.1.to_string() == ident.to_string()).is_none() {
-                    errors.push(syn::Error::new(ident.span(), format!("Cannot find referenced field '{}'",ident)));
-                }
-            },
-            IdStructure::Tuple(sub_struct) => {
-                for id_part in sub_struct {
-                    self.check_id(id_part, errors);
-                }
+    fn check_id(&mut self, ident : &Ident, errors : &mut Errors) {
+        match self.fields.iter().find(|e| e.1.to_string() == ident.to_string()) {
+            Some(id) => {
+                self.id_type = Some(id.2.clone());
             }
+            None => {
+                errors.push(syn::Error::new(ident.span(), format!("Cannot find referenced field '{}'",ident)));
+            }
+            
         }
     }
 

@@ -9,6 +9,7 @@ use crate::Entity;
 
 #[derive(Serialize, Deserialize,Entity)]
 #[entity(name = "entity_1",version = 1)]
+#[siblings("entity_3" = Cascade)]
 pub struct Entity1 {
     pub id: u32,
     pub prop1: String,
@@ -38,25 +39,6 @@ pub struct ChildEntity2 {
 #[derive(Serialize, Deserialize)]
 pub struct GrandChildEntity {
     id: ((String, u32), u32),
-}
-
-impl Entity for Entity1 {
-    type Key = u32;
-
-    fn store_name() -> &'static str {
-        "entity_1"
-    }
-
-    fn get_key(&self) -> &Self::Key {
-        &self.id
-    }
-
-    fn set_key(&mut self, key: &Self::Key) {
-        self.id = *key;
-    }
-    fn get_sibling_stores() -> Vec<(&'static str, DeletionBehaviour)> {
-        vec![("entity_3", DeletionBehaviour::Cascade)]
-    }
 }
 
 impl Entity for Entity2 {
