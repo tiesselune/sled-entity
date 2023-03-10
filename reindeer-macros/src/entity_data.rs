@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use syn::{Attribute, Meta,TypeTuple, Ident, Field, Fields, FieldsNamed, Type};
+use syn::{Attribute, Meta,TypeTuple, Ident, Fields};
 use crate::Errors;
 use proc_macro2::{Span, TokenStream};
 
@@ -40,7 +40,7 @@ impl EntityData {
                     Ok(v) => {
                         entity_data.id = Some(Self::parse_id_tuple(&v, errors));
                     },
-                    Err(e) => {
+                    Err(_) => {
                         match attr.parse_args::<Ident>() {
                             Ok(i) => {
                                 entity_data.id = Some(IdStructure::Simple(i));
