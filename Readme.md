@@ -23,8 +23,8 @@ let db = reindeer::open("./my-db")?;
 :bulb: Since this is just a `sled` DB, this object can be copied and sent accross threads safely.
 
 From there, you have two options :
- - Derive the `Entity trait`
- - Implement the trait yourself.
+ - Derive the `Entity` trait
+ - Implement the trait manually.
 
 ### Implementing the `Entity` trait
 
