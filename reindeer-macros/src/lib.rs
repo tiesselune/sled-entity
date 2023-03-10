@@ -4,7 +4,7 @@ mod structure;
 use attr::EntityData;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use syn::{parse_macro_input, DeriveInput, DataStruct, Visibility};
+use syn::{parse_macro_input, DeriveInput, DataStruct, Visibility, spanned::Spanned};
 use quote::quote;
 use syn::Ident;
 
@@ -26,7 +26,7 @@ fn construct_token_stream(input : &DeriveInput, errors : &mut Errors) -> TokenSt
     
     match &input.data {
         syn::Data::Struct(s) => {
-            let entity_data = EntityData::parse(&input.attrs,&s.fields, errors);
+            let entity_data = EntityData::parse(&input.span(),&input.attrs,&s.fields, errors);
             let attr_copy = entity_data.clone();
             result.extend([
                 generate_alias(&input.ident, entity_data.version.unwrap_or(0), &input.vis),

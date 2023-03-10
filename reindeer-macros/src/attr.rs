@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use syn::{Attribute, Meta,TypeTuple, Ident, Field, Fields};
+use syn::{Attribute, Meta,TypeTuple, Ident, Field, Fields, FieldsNamed, Type};
 use crate::Errors;
 use proc_macro2::{Span, TokenStream};
 
@@ -19,17 +19,18 @@ pub struct EntityData {
     pub id : Option<IdStructure>,
     pub children : Vec<(syn::Ident,syn::Ident)>,
     pub siblings : Vec<(syn::Ident,syn::Ident)>,
-    pub fields : Vec<(syn::Ident,syn::Type)>,
+    pub fields : Vec<(syn::Visibility,syn::Ident,syn::Type)>,
 }
 
 impl EntityData {
-    pub fn parse(attrs : &[Attribute], fields : &Fields, errors : &mut Errors) -> EntityData {
+    pub fn parse(span : &Span, attrs : &[Attribute], fields : &Fields, errors : &mut Errors) -> EntityData {
         let mut entity_data = EntityData::default();
+        entity_data.parse_fields( fields, errors);
         for attr in attrs {
             if attr.path.is_ident("entity") {
                 match attr.parse_meta(){
                     Ok(meta) => {
-                        Self::parse_entity_args(&meta, &mut entity_data, errors);
+                        entity_data.parse_entity_args(&meta, errors);
                     },
                     Err(e) => errors.push(e),
                 }
@@ -59,10 +60,11 @@ impl EntityData {
                 
             }
         }
+        entity_data.check(span,errors);
         entity_data
     }
 
-    fn parse_entity_args(meta : &Meta, entity_data : &mut EntityData, errors : &mut Errors) {
+    fn parse_entity_args(&mut self, meta : &Meta, errors : &mut Errors) {
         match meta {
             Meta::Path(p) => {
                 errors.push(syn::Error::new_spanned(p, "Unrecognized argument 1"));
@@ -71,7 +73,7 @@ impl EntityData {
                 for token in &l.nested {
                     match token {
                         syn::NestedMeta::Meta(m) => {
-                            Self::parse_entity_args(m, entity_data, errors);
+                            self.parse_entity_args(m, errors);
                         },
                         syn::NestedMeta::Lit(l) => {
                             errors.push(syn::Error::new_spanned(l, "Unrecognized argument 2"));
@@ -83,7 +85,7 @@ impl EntityData {
                 if nv.path.is_ident("name") {
                     match &nv.lit {
                         syn::Lit::Str(str) => {
-                            entity_data.name = Some(str.value());
+                            self.name = Some(str.value());
                         },
                         _ => {
                             errors.push(syn::Error::new_spanned(&nv.lit, "Store name must be a string."))
@@ -95,7 +97,7 @@ impl EntityData {
                         syn::Lit::Int(int) => {
                             match int.base10_parse::<u32>() {
                                 Ok(int) => {
-                                    entity_data.version = Some(int);
+                                    self.version = Some(int);
                                 },
                                 Err(_) => {
                                     errors.push(syn::Error::new_spanned(&int, "Store version must be a positive integer."))
@@ -110,7 +112,7 @@ impl EntityData {
                 else if nv.path.is_ident("id") {
                     match &nv.lit {
                         syn::Lit::Str(str) => {
-                            Self::parse_id_attr(&str.value(), &str.span(), entity_data, errors);
+                            self.parse_id_attr(&str.value(), &str.span(), errors);
                         },
                         _ => {
                             errors.push(syn::Error::new_spanned(&nv.lit, "Store name must be a string."))
@@ -124,19 +126,19 @@ impl EntityData {
         }
     }
 
-    fn parse_id_attr(str : &str, span : &Span, entity_data : &mut EntityData, errors : &mut Errors){
+    fn parse_id_attr(&mut self, str : &str, span : &Span, errors : &mut Errors){
         let tokens = TokenStream::from_str(str);
         match tokens {
             Ok(tokens) => {
                 let ident = syn::parse::<Ident>(tokens.clone().into());
                 match ident {
                     Ok(ident) => {
-                        entity_data.id = Some(IdStructure::Simple(ident.into()));
+                        self.id = Some(IdStructure::Simple(ident.into()));
                     },
                     Err(_)=> {
                         match syn::parse::<syn::TypeTuple>(tokens.into()) {
                             Ok(tuple) => {
-                                entity_data.id = Some(Self::parse_id_tuple(&tuple, errors));
+                                self.id = Some(Self::parse_id_tuple(&tuple, errors));
                             },
                             Err(_) => {
                                 errors.push(syn::Error::new(span.to_owned(), ID_PARSE_ERROR))
@@ -174,6 +176,51 @@ impl EntityData {
             errors.push(syn::Error::new_spanned(tuple, "Could not parse id parameter. id must be a string containing either a field name, or a tuple of field names."))
         }
         IdStructure::Tuple(result)
+    }
+
+    fn parse_fields(&mut self, fields : &Fields, errors : &mut Errors) {
+        match fields {
+            Fields::Named(fields) => {
+                for field in fields.named.iter() {
+                    let field = field.clone();
+                    self.fields.push((field.vis,field.ident.unwrap(),field.ty));
+                }
+            },
+            _ => errors.push(syn::Error::new_spanned(fields, "Reindeer only supports deriving Entity on named structs.")),
+        }
+    }
+
+    fn check(&mut self, span : &Span, errors : &mut Errors){
+        match &self.id {
+            None => {
+                let id_field = self.fields.iter().find(|e| e.1.to_string() == "id");
+                if let Some(id_field) = id_field {
+                    self.id = Some(IdStructure::Simple(id_field.1.clone()));
+                }
+                else {
+                    errors.push(syn::Error::new(span.to_owned(), "Missing ID specification. Use either a field called  `id`, the `id` macro meta, or the `entity_id` attribute."));
+                }
+            },
+            Some(id) => {
+                self.check_id(id, errors);
+            }
+        }
+
+
+    }
+    fn check_id(&self, id_struct : &IdStructure, errors : &mut Errors) {
+        match id_struct {
+            IdStructure::Simple(ident) => {
+                if self.fields.iter().find(|e| e.1.to_string() == ident.to_string()).is_none() {
+                    errors.push(syn::Error::new(ident.span(), format!("Cannot find referenced field '{}'",ident)));
+                }
+            },
+            IdStructure::Tuple(sub_struct) => {
+                for id_part in sub_struct {
+                    self.check_id(id_part, errors);
+                }
+            }
+        }
     }
 
 }

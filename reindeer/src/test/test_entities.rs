@@ -9,7 +9,6 @@ use crate::Entity;
 
 #[derive(Serialize, Deserialize,Entity)]
 #[entity(name = "entity_1",version = 1)]
-#[entity_id((id,id))]
 pub struct Entity1 {
     pub id: u32,
     pub prop1: String,
