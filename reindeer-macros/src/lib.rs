@@ -1,7 +1,7 @@
-mod attr;
+mod entity_data;
 mod structure;
 
-use attr::EntityData;
+use entity_data::EntityData;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use syn::{parse_macro_input, DeriveInput, DataStruct, Visibility, spanned::Spanned};
