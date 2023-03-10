@@ -22,7 +22,45 @@ let db = reindeer::open("./my-db")?;
 
 :bulb: Since this is just a `sled` DB, this object can be copied and sent accross threads safely.
 
-### Implement the `Entity` trait on your `struct`
+From there, you have two options :
+ - Derive the `Entity trait`
+ - Implement the trait yourself.
+
+### Implementing the `Entity` trait
+
+#### By using the `derive` macro:
+
+
+Entities need to implement the `Serialize` and `Deserialize` traits from `serde`, which are conveniently re-exported from `reindeer`
+
+```rust
+use reindeer::{Serialize,Deserialize,Entity}
+
+#[derive(Serialize,Deserialize,Entity)]
+pub struct MyStruct {
+    pub id : u32,
+    pub prop1 : String,
+    pub prop2 : u64,
+}
+```
+
+If your struct already has an `id` field, then it will  be used as the key for your store. Its type must either be an integral type, a `String` or a `Vec<u8>`, or a tuple of those types.
+
+The name of your store in the database will be the name of the entity, with its original case. Make sure, in this case, that it's the only entity with this name.
+
+Otherwise, you can use the `entity` helper attribute to specify a different key field and name :
+
+```rust
+#[derive(Serialize,Deserialize,Entity)]
+#[entity(name = "user", id = "email")]
+pub struct User {
+    pub email : String,
+    pub prop1 : String,
+    pub prop2 : u64,
+}
+```
+
+#### By Implementing the `Entity` trait manually
 
 Entities need to implement the `Serialize` and `Deserialize` traits from `serde`, which are conveniently re-exported from `reindeer`:
 
@@ -125,13 +163,50 @@ MyStruct::remove(0,&db)?;
 
 `reindeer` has three types of relations : 
 
- - `sibling` : An entity that has the same key in another tree (one to one relation)
+ - `sibling` : An entity that has the same key in another store (one to one relation)
  - `parent-child` : An entity which key is composed of its parent's key and a `u32` (as a two-element tuple) for efficient one-to-many relations
  - `free-relation` you freely connect two instances of two separate Entities together. This can be used to achieve many-to-many relationships, but is less efficient than sibling and parent-child relationships in regard to querying the database. **Use when sibling and parent-child are not possible.**
 
 ### Sibling relationships
 
-To create a sibling Entity, you need to link the Entity structs together by overriding the `get_sibling_stores()` method :
+To create a sibling Entity, you need to link the Entity structs together by overriding the specifying sibling stores and what happens when we delete one of them.
+
+Sibling stores must share the same key type (and thus matching entities will have the same id).
+
+:bulb: DeletionBehaviour determines what happens to the sibbling when the current entity is removed :
+
+ - `DeletionBehaviour::Cascade` also deletes sibling entity
+ - `DeletionBehaviour::Error` causes an Error if a sibling still exists and does not delete the source element
+ - `DeletionBehaviour::BreakLink` just removes the entity without removing its sibling.
+
+#### With the `derive` macro
+
+You can specify siblings using the `siblings` helper attribute :
+
+```rust
+#[derive(Serialize,Deserialize,Entity)]
+#[entity(name = "user", id = "email")]
+#[siblings(("user_data",Cascade),("user_data2",Cascade))]
+pub struct User {
+    pub email : String,
+    pub prop1 : String,
+    pub prop2 : u64,
+}
+
+#[derive(Serialize,Deserialize,Entity)]
+#[entity(name = "user_data", id = "email")]
+#[siblings(("user",Error),("user_data2",Cascade))]
+pub struct UserData {
+    pub email : String,
+    pub prop3 : String,
+    pub prop4 : String,
+    pub prop5 : i64
+}
+```
+
+In the above example, deleting a `User` instance also deletes its sibling `UserData` instance, but deleting the `UserData` instance causes an error and deletes neither.
+
+#### Manually
 
 ```rust
 use reindeer::{Entity,DeletionBehaviour};
@@ -156,13 +231,7 @@ impl Entity for MyStruct2{
 }
 ```
 
-:bulb: if sibling trees are defined, an entity instance might or might not have a sibling of the other Sibling type! Siblings are optionnal by default.
-
-:bulb: DeletionBehaviour determines what happens to the sibbling when the current entity is removed :
-
- - `DeletionBehaviour::Cascade` also deletes sibling entity
- - `DeletionBehaviour::Error` causes an Error if a sibling still exists and does not delete the source element
- - `DeletionBehaviour::BreakLink` just removes the entity without removing its sibling.
+:bulb: if sibling trees are defined, an entity instance might or might not have a sibling of the other Sibling store! Siblings are optionnal by default.
 
 In the above example, deleting a `MyStruct1` instance also deletes its sibling `MyStruct2` instance, but deleting the `MyStruct2` instance leaves its sibling `MyStruct1` instance intact.
 
@@ -204,6 +273,32 @@ For a parent-child relationship between entities to exist, the child entity must
 :bulb: Children entities will be auto-incremeted and easily retreived through their parent key.
 
 
+#### Using the `derive` macro
+
+You can define child stores the same way you define sibling stores, but using the `children` helper attribute:
+
+```rust
+#[derive(Serialize,Deserialize,Entity)]
+#[entity(name = "user", id = "email")]
+#[children(("document",Cascade))]
+pub struct User {
+    pub email : String,
+    pub prop1 : String,
+    pub prop2 : u64,
+}
+
+#[derive(Serialize,Deserialize,Entity)]
+#[entity(name = "document")]
+pub struct Document {
+    pub id : (String,u32),
+    pub prop3 : String,
+    pub prop4 : String,
+    pub prop5 : i64
+}
+```
+
+#### Manual implementation
+
 ```rust
 impl Entity for Parent{
     type Key = String;
@@ -226,6 +321,8 @@ impl Entity for Child{
 ```
 
 In the above example, deleting the parent entity will remove all child entities automatically (thanks to the `Cascade` deletion behaviour).
+
+
 **For database integrity, it is strongly advised not to use `DeletionBehaviour::BreakLink` on parent/child relations,** and instead use either `Error` of `Cascade`
 
 #### Adding a child entity
