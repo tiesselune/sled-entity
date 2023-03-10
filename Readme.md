@@ -77,7 +77,7 @@ pub struct MyStruct {
 
 Then you need to implement the `Entity` trait and implement three methods : `get_key`, `set_key` and `store_name`, as well as define an associated type, `Key`
 
- - `Key` is the type of the identifier for each instance of your entity ("primary key"). It must implement the `AsByte` trait. 
+ - `Key` is the type of the identifier for each instance of your entity ("primary key"). It must implement the `AsBytes` trait. 
  😌☝ It's already implemented for `String`, `u32`, `i32`, `u64`, `i64` and `Vec<u8>`, as well as for any 2-elements tuple of those types, so you should not need to implement it yourself.
 
  - The key represents the unique key that will be used to identify each instance of your struct in the database, to retreive and update them, it is of type `Key`
