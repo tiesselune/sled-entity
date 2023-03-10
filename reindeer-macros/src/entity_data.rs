@@ -5,7 +5,7 @@ use crate::Errors;
 use proc_macro2::{Span, TokenStream};
 use crate::relations::Relations;
 
-const ID_PARSE_ERROR : &'static str = "Could not parse id parameter. id must be a string containing either a field name, or a tuple of field names.";
+const ID_PARSE_ERROR : &'static str = "Could not parse id parameter. id must be a string containing either a field name.";
 
 
 
@@ -46,7 +46,7 @@ impl EntityData {
     fn parse_entity_args(&mut self, meta : &Meta, errors : &mut Errors) {
         match meta {
             Meta::Path(p) => {
-                errors.push(syn::Error::new_spanned(p, "Unrecognized argument 1"));
+                errors.push(syn::Error::new_spanned(p, "Unrecognized argument. Accepted arguments are 'name', 'version' and 'id'"));
             },
             Meta::List(l) => {
                 for token in &l.nested {
@@ -55,7 +55,7 @@ impl EntityData {
                             self.parse_entity_args(m, errors);
                         },
                         syn::NestedMeta::Lit(l) => {
-                            errors.push(syn::Error::new_spanned(l, "Unrecognized argument 2"));
+                            errors.push(syn::Error::new_spanned(l, "Unrecognized argument. Accepted arguments are 'name', 'version' and 'id'"));
                         },
                     }
                 }
@@ -67,7 +67,7 @@ impl EntityData {
                             self.name = Some(str.value());
                         },
                         _ => {
-                            errors.push(syn::Error::new_spanned(&nv.lit, "Store name must be a string."))
+                            errors.push(syn::Error::new_spanned(&nv.lit, "Store name must be a string litteral."))
                         }
                     }
                 }
@@ -84,7 +84,7 @@ impl EntityData {
                             }
                         },
                         _ => {
-                            errors.push(syn::Error::new_spanned(&nv.lit, "Store name must be a string."))
+                            errors.push(syn::Error::new_spanned(&nv.lit, "Store version must be a positive integer."))
                         }
                     }
                 }
@@ -94,7 +94,7 @@ impl EntityData {
                             self.parse_id_attr(&str.value(), &str.span(), errors);
                         },
                         _ => {
-                            errors.push(syn::Error::new_spanned(&nv.lit, "Store name must be a string."))
+                            errors.push(syn::Error::new_spanned(&nv.lit, "Store ID must be the name of a field as a string litteral."))
                         }
                     }
                 }
@@ -109,7 +109,7 @@ impl EntityData {
                     }
                 }
                 else {
-                    errors.push(syn::Error::new_spanned(&nv.path, "Unknown parameter"))
+                    errors.push(syn::Error::new_spanned(&nv.path, "Unrecognized argument. Accepted arguments are 'name', 'version' and 'id'"))
                 }
             },
         }
@@ -144,7 +144,7 @@ impl EntityData {
                     self.fields.push((field.vis,field.ident.unwrap(),field.ty));
                 }
             },
-            _ => errors.push(syn::Error::new_spanned(fields, "Reindeer only supports deriving Entity on named structs.")),
+            _ => errors.push(syn::Error::new_spanned(fields, "Reindeer only supports deriving Entity on named structs. Please implement Entity manually.")),
         }
     }
 
@@ -157,7 +157,7 @@ impl EntityData {
                     self.id_type = Some(id_field.2.clone());
                 }
                 else {
-                    errors.push(syn::Error::new(span.to_owned(), "Missing ID specification. Use either a field called  `id`, the `id` macro meta, or the `entity_id` attribute."));
+                    errors.push(syn::Error::new(span.to_owned(), r#"Missing ID specification. Use either a field called  `id`, or specify the 'id' argument of the `entity` helper attribute : `#[entity(id = "key")]`"#)); 
                 }
             },
             Some(id) => {
@@ -173,7 +173,7 @@ impl EntityData {
                 self.id_type = Some(id.2.clone());
             }
             None => {
-                errors.push(syn::Error::new(ident.span(), format!("Cannot find referenced field '{}'",ident)));
+                errors.push(syn::Error::new(ident.span(), format!("Cannot find referenced field '{}' in current type",ident)));
             }
             
         }
