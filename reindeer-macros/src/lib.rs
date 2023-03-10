@@ -57,7 +57,6 @@
 //! 
 
 mod entity_data;
-mod structure;
 mod relations;
 
 use entity_data::EntityData;
