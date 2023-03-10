@@ -1,3 +1,61 @@
+//! Derive macro for `reindeer`'s 🦌 `Entity` trait.
+//! 
+//! To automatically derive Entity on a `struct`, you simply have to derive `Entity` (as Well as `serde`'s `Serialize` and `Deserialize` traits) like so:
+//! 
+//! ```rust
+//! #[derive(Serialize,Deserialize,Entity)]
+//! struct User {
+//!     id : (u32,u32),
+//!     email : String,
+//!     username : String,
+//!     last_login : i64,
+//!     password_hash : String,
+//! }
+//! ```
+//! 
+//! ☝😉 This will generate an `Entity` implementation with store name `User`, version 0, and id being the `id` field.
+//! To specify other values, use the helper attribute `entity` like so :
+//! 
+//! ```rust
+//! #[derive(Serialize,Deserialize,Entity)]
+//! #[entity(name = "user", version = 1,id = "email")]
+//! struct User {
+//!     email : String,
+//!     username : String,
+//!     last_login : i64,
+//!     password_hash : String,
+//! }
+//! ```
+//! 
+//! To specify sibling entities and child entities, use the `sibling` and `child` helper attributes
+//! respectively:
+//! 
+//! ```rust
+//! #[derive(Serialize,Deserialize,Entity)]
+//! #[entity(name = "user", version = 1,id = "email")]
+//! #[sibling(("user_data", Cascade))]
+//! #[children(("doc",Cascade),("shared_doc",BreakLink))]
+//! struct User {
+//!     email : String,
+//!     username : String,
+//!     last_login : i64,
+//!     password_hash : String,
+//! }
+//! 
+//! //! #[derive(Serialize,Deserialize,Entity)]
+//! #[entity(name = "user_data", version = 1,id = "email")]
+//! #[sibling(("user", Error))]
+//! struct UserData {
+//!     email : String,
+//!     username : String,
+//!     last_login : i64,
+//!     password_hash : String,
+//! }
+//! ```
+//! 
+//! The second part of each relation is a `reindeer::DeletionBehaviour` enum value : `BreakLink`,`Cascade`, or `Error`.
+//! 
+
 mod entity_data;
 mod structure;
 mod relations;
@@ -11,6 +69,64 @@ use syn::Ident;
 
 type Errors = Vec<syn::Error>;
 
+///
+/// Derive macro for `reindeer`'s 🦌 `Entity` trait.
+/// 
+/// To automatically derive Entity on a `struct`, you simply have to derive `Entity` (as Well as `serde`'s `Serialize` and `Deserialize` traits) like so:
+/// 
+/// ```rust
+/// #[derive(Serialize,Deserialize,Entity)]
+/// struct User {
+///     id : (u32,u32),
+///     email : String,
+///     username : String,
+///     last_login : i64,
+///     password_hash : String,
+/// }
+/// ```
+/// 
+/// ☝😉 This will generate an `Entity` implementation with store name `User`, version 0, and id being the `id` field.
+/// To specify other values, use the helper attribute `entity` like so :
+/// 
+/// ```rust
+/// #[derive(Serialize,Deserialize,Entity)]
+/// #[entity(name = "user", version = 1,id = "email")]
+/// struct User {
+///     email : String,
+///     username : String,
+///     last_login : i64,
+///     password_hash : String,
+/// }
+/// ```
+/// 
+/// To specify sibling entities and child entities, use the `sibling` and `child` helper attributes
+/// respectively:
+/// 
+/// ```rust
+/// #[derive(Serialize,Deserialize,Entity)]
+/// #[entity(name = "user", version = 1,id = "email")]
+/// #[sibling(("user_data", Cascade))]
+/// #[children(("doc",Cascade),("shared_doc",BreakLink))]
+/// struct User {
+///     email : String,
+///     username : String,
+///     last_login : i64,
+///     password_hash : String,
+/// }
+/// 
+/// #[derive(Serialize,Deserialize,Entity)]
+/// #[entity(name = "user_data", version = 1,id = "email")]
+/// #[sibling(("user", Error))]
+/// struct UserData {
+///     email : String,
+///     username : String,
+///     last_login : i64,
+///     password_hash : String,
+/// }
+/// ```
+/// 
+/// The second part of each relation is a `reindeer::DeletionBehaviour` enum value : `BreakLink`,`Cascade`, or `Error`.
+/// 
 #[proc_macro_derive(Entity, attributes(entity,children,siblings))]
 pub fn derive_entity(item : TokenStream) -> TokenStream {
     let ast = parse_macro_input!(item as DeriveInput);
