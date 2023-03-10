@@ -50,6 +50,7 @@ fn generate_impl(struct_name : &Ident,entity_data : &EntityData) -> TokenStream 
 
     if let (Some(store_name),Some(id_field),Some(key_type),crate_name) = (&entity_data.name,&entity_data.id,&entity_data.id_type,&entity_data.crate_name) {
         let crate_name = Ident::new(crate_name,Span::call_site());
+        let children = &entity_data.children;
         quote!{
             impl #crate_name::Entity for #struct_name {
                 type Key = #key_type;
@@ -61,6 +62,12 @@ fn generate_impl(struct_name : &Ident,entity_data : &EntityData) -> TokenStream 
                 }
                 fn set_key(&mut self, key : &Self::Key) {
                     self.#id_field = key.clone();
+                }
+                fn get_child_stores() -> Vec<(&'static str, #crate_name::DeletionBehaviour)> {
+                    vec![]
+                }
+                fn get_sibling_stores() -> Vec<(&'static str, #crate_name::DeletionBehaviour)> {
+                    vec![]
                 }
             }
         }.into()
