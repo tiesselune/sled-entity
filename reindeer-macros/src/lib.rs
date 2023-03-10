@@ -4,7 +4,7 @@ mod structure;
 use entity_data::EntityData;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use syn::{parse_macro_input, DeriveInput, DataStruct, Visibility, spanned::Spanned};
+use syn::{parse_macro_input, DeriveInput, Visibility, spanned::Spanned};
 use quote::quote;
 use syn::Ident;
 
@@ -30,7 +30,7 @@ fn construct_token_stream(input : &DeriveInput, errors : &mut Errors) -> TokenSt
             let attr_copy = entity_data.clone();
             result.extend([
                 generate_alias(&input.ident, entity_data.version.unwrap_or(0), &input.vis),
-                generate_impl(&input.ident, &input.ident, &attr_copy, errors),
+                generate_impl( &input.ident, &attr_copy),
             ])
         },
         syn::Data::Enum(_) => errors.push(syn::Error::new_spanned(input, "Cannot derive Entity on an enum. Please implement Entity manually.")),
@@ -46,11 +46,12 @@ fn generate_alias(name : &Ident,version : u32, vis : &Visibility) -> TokenStream
     }.into()
 }
 
-fn generate_impl(trait_name : &Ident, struct_name : &Ident,entity_data : &EntityData, errors : &mut Errors) -> TokenStream {
+fn generate_impl(struct_name : &Ident,entity_data : &EntityData) -> TokenStream {
 
-    if let (Some(store_name),Some(id_field),Some(key_type)) = (&entity_data.name,&entity_data.id,&entity_data.id_type) {
+    if let (Some(store_name),Some(id_field),Some(key_type),crate_name) = (&entity_data.name,&entity_data.id,&entity_data.id_type,&entity_data.crate_name) {
+        let crate_name = Ident::new(crate_name,Span::call_site());
         quote!{
-            impl Entity for #struct_name {
+            impl #crate_name::Entity for #struct_name {
                 type Key = #key_type;
                 fn store_name() -> &'static str {
                     #store_name

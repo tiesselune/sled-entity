@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use syn::{Attribute, Meta,TypeTuple, Ident, Fields};
+use syn::{Attribute, Meta,Ident, Fields};
 use crate::Errors;
 use proc_macro2::{Span, TokenStream};
 
@@ -8,6 +8,7 @@ const ID_PARSE_ERROR : &'static str = "Could not parse id parameter. id must be 
 
 #[derive(Default,Clone)]
 pub struct EntityData {
+    pub crate_name : String,
     pub name : Option<String>,
     pub version : Option<u32>,
     pub id : Option<Ident>,
@@ -20,6 +21,7 @@ pub struct EntityData {
 impl EntityData {
     pub fn parse(span : &Span, attrs : &[Attribute], fields : &Fields, errors : &mut Errors) -> EntityData {
         let mut entity_data = EntityData::default();
+        entity_data.crate_name = "reindeer".to_string();
         entity_data.parse_fields( fields, errors);
         for attr in attrs {
             if attr.path.is_ident("entity") {
@@ -93,6 +95,16 @@ impl EntityData {
                         },
                         _ => {
                             errors.push(syn::Error::new_spanned(&nv.lit, "Store name must be a string."))
+                        }
+                    }
+                }
+                else if nv.path.is_ident("crate") {
+                    match &nv.lit {
+                        syn::Lit::Str(str) => {
+                            self.crate_name = str.value();
+                        },
+                        _ => {
+                            errors.push(syn::Error::new_spanned(&nv.lit, "Crate name must be a string."))
                         }
                     }
                 }
