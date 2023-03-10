@@ -1,6 +1,5 @@
 use crate::error::Result;
 use crate::AutoIncrementEntity;
-use reindeer_macros::Entity;
 use serde_derive::{Deserialize, Serialize};
 use sled::Db;
 
