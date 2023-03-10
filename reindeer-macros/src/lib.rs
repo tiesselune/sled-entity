@@ -156,7 +156,7 @@ fn construct_token_stream(input : &DeriveInput, errors : &mut Errors) -> TokenSt
 }
 
 fn generate_alias(name : &Ident,version : u32, vis : &Visibility, generics : &syn::Generics) -> TokenStream {
-    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let (_, ty_generics, _) = generics.split_for_impl();
     let versionned_ident = Ident::new(&format!("{}_v{}",name.to_string(),version), Span::call_site());
     quote ! {
         #vis type #versionned_ident #ty_generics = #name #ty_generics;

@@ -1,9 +1,5 @@
-use crate::AsBytes;
 use crate::error::Result;
 use crate::AutoIncrementEntity;
-use serde::Deserialize;
-use serde::Serialize;
-use serde::de::DeserializeOwned;
 use serde_derive::{Deserialize, Serialize};
 use sled::Db;
 
