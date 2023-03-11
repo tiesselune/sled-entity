@@ -28,6 +28,7 @@ pub struct Entity2 {
 #[children(("child_entity_2",Error))]
 pub struct Entity3 {
     pub id: u32,
+    pub some_bool : bool,
 }
 
 #[derive(Serialize, Deserialize, Clone,Entity)]
@@ -71,7 +72,7 @@ pub fn set_up_content(db: &Db) -> Result<()> {
     e1.save_next(db)?;
     e1.prop1 = String::from("Hello, Nancy!");
     e1.save_next(db)?;
-    e1.prop1 = String::from("Hello, Jack!");
+    e1.prop1 = String::from("Hello, Steeve!");
     e1.save_next(db)?;
     let mut e2 = Entity2 {
         id: String::from("id1"),
@@ -85,12 +86,13 @@ pub fn set_up_content(db: &Db) -> Result<()> {
     e2.set_key(&String::from("id3"));
     e2.prop2 = 1000;
     e2.save(db)?;
-    let mut e3 = Entity3 { id: 0 };
+    let mut e3 = Entity3 { id: 0, some_bool : false };
     e3.save_next(db)?;
     e3.save_next(db)?;
     let mut e4 = ChildEntity1 {
         id: (String::from("id0"), 0),
     };
+    e3.some_bool = true;
     e3.save_next(db)?;
 
     e2.save_next_child(&mut e4, db)?;

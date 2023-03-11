@@ -352,7 +352,9 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// Gets all entities of a given store matching a condition materialized
     /// as a function returning a boolean
     ///
-    /// ⚠ This will effectively iterate over every entity in the store.
+    /// ⚠ This will effectively iterate over every entity in the store. 
+    /// Prefer [QueryBuilder](struct.QueryBuilder.html)'s [`get_with_filter`](struct.QueryBuilder.html#method.get_with_filter) 
+    /// if possible and combine it with a set of ids, a parent, etc to avoid iteration on the whole store.
     ///
     /// ### Example
     /// ```rust
