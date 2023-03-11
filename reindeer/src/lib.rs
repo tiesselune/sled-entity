@@ -7,9 +7,9 @@
 //!
 //! It relies on a trait, [`Entity`](entity/trait.Entity.html), to provide basic document store capabilities to any `serde`-serializable struct that implements it.  
 //!
-//! To use `reindeer`, add a key to identify any instance individually to your struct and implement the [`store_name`](entity/trait.Entity.html#method.store_name),
+//! To use `reindeer`, add a key to identify any instance individually to your struct and [derive the `Entity` trait](derive.Entity.html), or you can implement the [`store_name`](entity/trait.Entity.html#method.store_name),
 //! [`get_key`](entity/trait.Entity.html#method.get_key) and [`set_key`](entity/trait.Entity.html#method.set_key) methods to implement
-//! the [`reindeer::Entity`](entity/trait.Entity.html) trait.
+//! the [`reindeer::Entity`](entity/trait.Entity.html) trait
 //!
 //! You can then use
 //!  - the [`Entity::save`](entity/trait.Entity.html#method.save) method to save your struct instance to the database

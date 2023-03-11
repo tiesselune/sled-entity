@@ -159,6 +159,19 @@ let instances = MyStruct::get_with_filter(|m_struct| {mstruct.prop1.len > 20},&d
 MyStruct::remove(0,&db)?;
 ```
 
+### Using the `QueryBuilder`
+
+You can combine conditions easily with the [`QueryBuilder`](https://docs.rs/reindeer/0.3.0/reindeer/struct.QueryBuilder.html) helper object :
+
+```rust
+let students = QueryBuilder::new()
+    .with_parent(&school_id)
+    .with_named_relation_to::<Club>(&club_id, "member")
+    .get_with_filter(|s : &Student| s.age > 18,&data.db)?;
+```
+
+Refer to the documentation for more information.
+
 ## Defining Relations
 
 `reindeer` has three types of relations : 
@@ -231,7 +244,7 @@ impl Entity for MyStruct2{
 }
 ```
 
-:bulb: if sibling trees are defined, an entity instance might or might not have a sibling of the other Sibling store! Siblings are optionnal by default.
+:bulb: if sibling stores are defined, an entity instance might or might not have a sibling of the other Sibling store! Siblings are optionnal by default.
 
 In the above example, deleting a `MyStruct1` instance also deletes its sibling `MyStruct2` instance, but deleting the `MyStruct2` instance leaves its sibling `MyStruct1` instance intact.
 
@@ -371,18 +384,18 @@ In the above example, deletion behaviour in both ways are provided : deleting `e
 
 `DeletionBehaviour::Error` is also an option here.
 
-#### Getting related entites from a given tree
+#### Getting related entites from a given store
 
 ```rust
 let related_entities = e1.get_related::<Entity2>(db)?;
 ```
-To get only the first related entity from the other tree, use 
+To get only the first related entity from the other store, use 
 
 ```rust
 let related_entity = e1.get_single_related::<Entity2>(db)?;
 ```
 
-#### Getting related entites from a given tree with a specific relation name
+#### Getting related entites from a given store with a specific relation name
 
 A name must have been supplied when creating the relation :
 
@@ -393,7 +406,7 @@ e1.create_relation(e2,DeletionBehaviour::Cascade, DeletionBehaviour::BreakLink,S
 ```rust
 let related_entities = e1.get_related_with_name::<Entity2>("secondary",db)?;
 ```
-To get only the first related entity from the other tree, use 
+To get only the first related entity from the other store, use 
 
 ```rust
 let related_entity = e1.get_single_related_with_name::<Entity2>("main",db)?;

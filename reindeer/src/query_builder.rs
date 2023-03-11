@@ -8,6 +8,15 @@ use crate::{relation::Relation, AsBytes, Entity, Result};
 /// just use `&entity.get_key().as_bytes()`.
 ///
 /// Execute the query with `get` or `get_single`, providing the Db instance to run it on.
+/// 
+/// For instance, this will list all students older than 18 belonging to a given school and members of a given club.
+/// ```rust
+/// let students = QueryBuilder::new()
+///     .with_parent(&school_id)
+///     .with_named_relation_to::<Club>(&club_id, "member")
+///     .get_with_filter(|s : &Student| s.age > 18,&data.db)?;
+/// ```
+/// 
 pub struct QueryBuilder<'a> {
     ids: Vec<Vec<u8>>,
     parent: Option<Vec<u8>>,
@@ -43,6 +52,18 @@ impl<'a> QueryBuilder<'a> {
         self
     }
 
+    /// Convenience alias for the `with_id` function.
+    pub fn with_sibling(&mut self, id : &impl AsBytes) -> &mut QueryBuilder<'a> {
+        self.with_id(id);
+        self
+    }
+
+    /// Convenience method to get an entity having a specific id as a child.
+    pub fn with_child(&mut self, id : (&impl AsBytes,&impl AsBytes)) -> &mut QueryBuilder<'a> {
+        self.with_id(id.0);
+        self
+    }
+
     /// Specifies that a named relation to another entity has to exist.
     /// This can be used multiple times to specify several conditions.
     pub fn with_named_relation_to<OT: Entity>(
@@ -66,6 +87,18 @@ impl<'a> QueryBuilder<'a> {
     /// Executes the query and returns the result as a Vec of the chosen entity.
     pub fn get<T: Entity>(&self, db: &Db) -> Result<Vec<T>> {
         Ok(T::get_each_u8(&self.get_ids::<T>(db)?, db))
+    }
+
+    /// Executes the query, filters it given a filter function, and returns the result as a Vec of the chosen entity.
+    /// ```rust
+    /// let students = QueryBuilder::new()
+    ///     .with_parent(&school_id)
+    ///     .get_with_filter(|s : &Student| s.age > 18,&data.db)?;
+    /// ```
+    /// Note that we precise the type of the closure's parameter to let Rust infer the generic types of this function.
+    pub fn get_with_filter<T : Entity, F : Fn(&T) -> bool>(&self, filter : F, db : &Db) -> Result<Vec<T>>  {
+        let result = self.get::<T>(db)?;
+        Ok(result.into_iter().filter(filter).collect())
     }
 
     /// Executes the query and returns the first entity matching the query.
