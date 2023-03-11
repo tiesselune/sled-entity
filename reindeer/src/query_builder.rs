@@ -43,6 +43,18 @@ impl<'a> QueryBuilder<'a> {
         self
     }
 
+    /// Convenience alias for the `with_id` function.
+    pub fn with_sibling(&mut self, id : &impl AsBytes) -> &mut QueryBuilder<'a> {
+        self.with_id(id);
+        self
+    }
+
+    /// Convenience method to get an entity having a specific id as a child.
+    pub fn with_child(&mut self, id : (&impl AsBytes,&impl AsBytes)) -> &mut QueryBuilder<'a> {
+        self.with_id(id.0);
+        self
+    }
+
     /// Specifies that a named relation to another entity has to exist.
     /// This can be used multiple times to specify several conditions.
     pub fn with_named_relation_to<OT: Entity>(
