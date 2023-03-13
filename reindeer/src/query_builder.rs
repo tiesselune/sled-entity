@@ -17,6 +17,7 @@ use crate::{relation::Relation, AsBytes, Entity, Result};
 ///     .get_with_filter(|s : &Student| s.age > 18,&data.db)?;
 /// ```
 ///
+#[derive(Default)]
 pub struct QueryBuilder<'a> {
     ids: Vec<Vec<u8>>,
     parent: Option<Vec<u8>>,
@@ -34,7 +35,7 @@ impl<'a> QueryBuilder<'a> {
     }
 
     /// Specifies an array of ids to consider in this query. This can be used multiple times.
-    pub fn with_ids(&mut self, ids: &mut Vec<&impl AsBytes>) -> &mut QueryBuilder<'a> {
+    pub fn with_ids(&mut self, ids: &mut [&impl AsBytes]) -> &mut QueryBuilder<'a> {
         self.ids
             .append(&mut ids.iter().map(|id| id.as_bytes()).collect());
         self
