@@ -62,8 +62,8 @@ impl Parse for Relations {
 impl From<Relation> for SerRelation {
     fn from(value: Relation) -> Self {
         SerRelation(
-            value.0.to_token_stream().to_string(),
-            value.1.to_token_stream().to_string(),
+            value.0.value().to_string(),
+            value.1.to_string(),
         )
     }
 }

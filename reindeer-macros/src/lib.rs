@@ -55,14 +55,15 @@
 //!
 //! The second part of each relation is a `reindeer::DeletionBehaviour` enum value : `BreakLink`,`Cascade`, or `Error`.
 //!
-
 mod entity_data;
 mod relations;
+mod schema;
 
 use entity_data::EntityData;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
+use schema::save_schema;
 use syn::Ident;
 use syn::{parse_macro_input, spanned::Spanned, DeriveInput, Visibility};
 
@@ -157,7 +158,8 @@ fn construct_token_stream(input: &DeriveInput, errors: &mut Errors) -> TokenStre
                     &input.generics,
                 ),
                 generate_impl(&input.ident, &attr_copy, &input.generics),
-            ])
+            ]);
+            save_schema(&entity_data,errors);
         }
         syn::Data::Enum(_) => errors.push(syn::Error::new_spanned(
             input,

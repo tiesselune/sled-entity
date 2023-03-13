@@ -24,7 +24,6 @@ pub struct EntityData {
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct SerEntityData {
-    pub crate_name: String,
     pub name: Option<String>,
     pub version: Option<u32>,
     pub id: Option<String>,
@@ -217,10 +216,9 @@ impl EntityData {
 impl From<EntityData> for SerEntityData {
     fn from(value: EntityData) -> Self {
         SerEntityData {
-            crate_name: value.crate_name,
             name: value.name,
             version: value.version,
-            id: value.id.map(|e| e.to_token_stream().to_string()),
+            id: value.id.map(|e| e.to_string()),
             id_type: value.id_type.map(|e| e.to_token_stream().to_string()),
             children: value.children.0.into_iter().map(|e| e.into()).collect(),
             siblings: value.siblings.0.into_iter().map(|e| e.into()).collect(),
@@ -230,7 +228,7 @@ impl From<EntityData> for SerEntityData {
                 .map(|e| {
                     (
                         e.0.to_token_stream().to_string(),
-                        e.1.to_token_stream().to_string(),
+                        e.1.to_string(),
                         e.2.to_token_stream().to_string(),
                     )
                 })
