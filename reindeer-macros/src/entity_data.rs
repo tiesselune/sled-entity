@@ -1,7 +1,9 @@
 use std::str::FromStr;
 
+use quote::ToTokens;
+use serde::{Serialize, Deserialize};
 use syn::{Attribute, Meta,Ident, Fields};
-use crate::Errors;
+use crate::{Errors, relations::SerRelation};
 use proc_macro2::{Span, TokenStream};
 use crate::relations::Relations;
 
@@ -19,6 +21,18 @@ pub struct EntityData {
     pub children : Relations,
     pub siblings : Relations,
     pub fields : Vec<(syn::Visibility,syn::Ident,syn::Type)>,
+}
+
+#[derive(Default,Clone,Serialize,Deserialize)]
+pub struct SerEntityData  {
+    pub crate_name : String,
+    pub name : Option<String>,
+    pub version : Option<u32>,
+    pub id : Option<String>,
+    pub id_type : Option<String>,
+    pub children : Vec<SerRelation>,
+    pub siblings : Vec<SerRelation>,
+    pub fields : Vec<(String,String,String)>,
 }
 
 impl EntityData {
@@ -194,4 +208,24 @@ impl EntityData {
         }
     }
 
+}
+
+impl From<EntityData> for SerEntityData {
+    fn from(value: EntityData) -> Self {
+        SerEntityData { 
+            crate_name: value.crate_name, 
+            name: value.name, 
+            version: value.version, 
+            id: value.id.map(|e| e.to_token_stream().to_string()), 
+            id_type: value.id_type.map(|e| e.to_token_stream().to_string()), 
+            children: value.children.0.into_iter().map(|e| e.into()).collect(), 
+            siblings: value.siblings.0.into_iter().map(|e| e.into()).collect(), 
+            fields: value.fields.iter().map(|e| {
+                (
+                    e.0.to_token_stream().to_string(),
+                    e.1.to_token_stream().to_string(),
+                    e.2.to_token_stream().to_string(),
+                )
+            }).collect() }
+    }
 }

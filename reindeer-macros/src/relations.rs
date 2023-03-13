@@ -1,9 +1,13 @@
 use proc_macro2::{TokenTree, Ident};
 use quote::ToTokens;
+use serde::{Serialize, Deserialize};
 use syn::{parse::Parse, parenthesized, punctuated::Punctuated, Token, LitStr};
 
 #[derive(Clone)]
 pub struct Relation(pub syn::LitStr,pub syn::Ident);
+
+#[derive(Clone,Serialize,Deserialize)]
+pub struct SerRelation(pub String,pub String);
 
 impl Parse for Relation {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
@@ -38,5 +42,11 @@ impl Parse for Relations {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let result = Punctuated::<Relation,Token!(,)>::parse_separated_nonempty(input)?;
         Ok(Relations(result.into_iter().collect()))
+    }
+}
+
+impl From<Relation> for SerRelation {
+    fn from(value: Relation) -> Self {
+        SerRelation(value.0.to_token_stream().to_string(), value.1.to_token_stream().to_string())
     }
 }
