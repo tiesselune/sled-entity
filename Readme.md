@@ -12,6 +12,30 @@ Reindeer is a small embedded entity store built on top of [`sled`](https://sled.
 
 It serves as a convenient middle ground to store, retreive and update structs in an embedded database with a bare-minimum relationnal model.
 
+## Why Reindeer 🦌 ?
+
+Reindeer aims to provide a very small and very fast embedded database, suitable for deployment on very low-end devices. It uses a binary tree to search for keys, and is designed to handle parent-child relationships very efficiently, while other types of relations are slower.
+
+Let's say you have to write a small utility for a network of schools. Each school has a set of promotions, and each promotion a list of students. Each School has a set of modules as well, on which they can register one or several promotions. You will have entities for `School`, `Promotion`, `Module` and `Student`. Most of the relationships are "parent-child" relationships, apart from Promotions registered to a given module (with each module having 1 or two promotions). 
+
+For such a case, full-fledged SQL databases are not necessary, and will use computing resources. SQLite has a relatioin model that makes making it unecessarily complex.
+
+Here, Reindeer is organised such that each school has an ID (let's say, 1), each promotion has an ID beginning with its school ID (let's say : (1,9)) and each student has an ID begining with its promotion ID (so ((1,9),32) for instance). This makes searching all students in a school or all students in a promotion very efficient using a binary tree.
+
+Plus, Reindeer uses `bincode` for its data representation on disk, making it super fast at serializing and deserializing data, even on low-end hardware. Its schema and data layout are solely dependent on the code that uses it, being serialized versions of Rust struct instances.
+
+The goal of Reindeer is providing a super-fast, super-efficient embedded solution for this sort of case, while running on low-end hardware.
+
+## Where to use Reindeer ?
+
+Reindeer is meant to be used in scenarios where you need very good performance and a minimal footprint while still needing a basic relationnal model. If you have a data structure that can be summarized as mainly parent-child relations, then Reindeer will do the trick.
+
+:warning: **Reindeer is still in heavy development, so use at your own risk. Things will change and things may break.**
+
+Reindeer does not provide data redundancy or integrity checks other than deletion behaviours out of the box, so keep that in mind. It does provide a JSON import and export function if you want to secure data.
+
+[A migration system](https://github.com/tiesselune/reindeer-rs/issues/10) is on the way.
+
 ## Getting Started
 
 ### Create a `sled` database
