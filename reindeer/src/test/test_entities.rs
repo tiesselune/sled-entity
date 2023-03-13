@@ -6,46 +6,46 @@ use sled::Db;
 use crate::DeletionBehaviour;
 use crate::Entity;
 
-#[derive(Serialize, Deserialize,Entity)]
-#[entity(name = "entity_1",version = 1,crate = "crate")]
+#[derive(Serialize, Deserialize, Entity)]
+#[entity(name = "entity_1", version = 1, crate = "crate")]
 #[siblings(("entity_3",Cascade))]
 pub struct Entity1 {
     pub id: u32,
     pub prop1: String,
 }
 
-#[derive(Serialize, Deserialize, Clone,Entity)]
-#[entity(name = "entity_2",version = 1,crate = "crate")]
+#[derive(Serialize, Deserialize, Clone, Entity)]
+#[entity(name = "entity_2", version = 1, crate = "crate")]
 #[children(("child_entity_1",Cascade))]
 pub struct Entity2 {
     pub id: String,
     pub prop2: u32,
 }
 
-#[derive(Serialize, Deserialize,Entity)]
-#[entity(name = "entity_3",version = 1,crate = "crate")]
+#[derive(Serialize, Deserialize, Entity)]
+#[entity(name = "entity_3", version = 1, crate = "crate")]
 #[siblings(("entity_1",Error))]
 #[children(("child_entity_2",Error))]
 pub struct Entity3 {
     pub id: u32,
-    pub some_bool : bool,
+    pub some_bool: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone,Entity)]
-#[entity(name = "child_entity_1",version = 1,crate = "crate")]
+#[derive(Serialize, Deserialize, Clone, Entity)]
+#[entity(name = "child_entity_1", version = 1, crate = "crate")]
 #[children(("grand_child_entity",Cascade))]
 pub struct ChildEntity1 {
     id: (String, u32),
 }
 
-#[derive(Serialize, Deserialize,Entity)]
-#[entity(name = "child_entity_2",version = 1,crate = "crate")]
+#[derive(Serialize, Deserialize, Entity)]
+#[entity(name = "child_entity_2", version = 1, crate = "crate")]
 pub struct ChildEntity2 {
     id: (u32, u32),
 }
 
-#[derive(Serialize, Deserialize,Entity)]
-#[entity(name = "grand_child_entity",version = 1,crate = "crate")]
+#[derive(Serialize, Deserialize, Entity)]
+#[entity(name = "grand_child_entity", version = 1, crate = "crate")]
 pub struct GrandChildEntity {
     id: ((String, u32), u32),
 }
@@ -86,7 +86,10 @@ pub fn set_up_content(db: &Db) -> Result<()> {
     e2.set_key(&String::from("id3"));
     e2.prop2 = 1000;
     e2.save(db)?;
-    let mut e3 = Entity3 { id: 0, some_bool : false };
+    let mut e3 = Entity3 {
+        id: 0,
+        some_bool: false,
+    };
     e3.save_next(db)?;
     e3.save_next(db)?;
     let mut e4 = ChildEntity1 {

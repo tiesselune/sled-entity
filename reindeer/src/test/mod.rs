@@ -1,9 +1,8 @@
 mod test_entities;
 
 use crate::{
-    error::Result, relation::FamilyDescriptor,
-    test::test_entities::GrandChildEntity, AutoIncrementEntity, DeletionBehaviour, Entity,
-    QueryBuilder,
+    error::Result, relation::FamilyDescriptor, test::test_entities::GrandChildEntity,
+    AutoIncrementEntity, DeletionBehaviour, Entity, QueryBuilder,
 };
 use test_entities::{
     set_up, set_up_content, tear_down, ChildEntity1, ChildEntity2, Entity1, Entity2, Entity3,
@@ -115,7 +114,10 @@ fn test_add_sibling() -> Result<()> {
         prop1: String::from("First Sibling"),
     };
     e1.save_next(&db)?;
-    let mut e3 = Entity3 { id: 0, some_bool : false };
+    let mut e3 = Entity3 {
+        id: 0,
+        some_bool: false,
+    };
     e1.save_sibling(&mut e3, &db)?;
     assert_eq!(e3.id, e1.id);
     assert_eq!(e3.id, 3);
@@ -133,7 +135,10 @@ fn test_delete_sibling_cascade() -> Result<()> {
         prop1: String::from("First Sibling"),
     };
     e1.save_next(&db)?;
-    let mut e3 = Entity3 { id: 0, some_bool : false };
+    let mut e3 = Entity3 {
+        id: 0,
+        some_bool: false,
+    };
     e1.save_sibling(&mut e3, &db)?;
     assert!(Entity1::remove(e1.get_key(), &db).is_ok());
     assert!(Entity1::get(e1.get_key(), &db)?.is_none());
@@ -152,7 +157,10 @@ fn test_delete_sibling_error() -> Result<()> {
         prop1: String::from("First Sibling"),
     };
     e1.save_next(&db)?;
-    let mut e3 = Entity3 { id: 0, some_bool : false };
+    let mut e3 = Entity3 {
+        id: 0,
+        some_bool: false,
+    };
     e1.save_sibling(&mut e3, &db)?;
     assert!(Entity3::remove(e1.get_key(), &db).is_err());
     assert!(Entity1::get(e1.get_key(), &db)?.is_some());
@@ -518,9 +526,11 @@ fn test_filtered_query_builder() -> Result<()> {
         Some("rel2"),
         &db,
     )?;
-    let result = QueryBuilder::new().with_named_relation_to::<Entity2>(&e2_1.id, "rel1").get_with_filter(|e : &Entity3 | e.some_bool, &db)?;
-    assert_eq!(result.len(),1);
-    assert_eq!(result[0].id,2);
+    let result = QueryBuilder::new()
+        .with_named_relation_to::<Entity2>(&e2_1.id, "rel1")
+        .get_with_filter(|e: &Entity3| e.some_bool, &db)?;
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].id, 2);
     tear_down(&name)?;
     Ok(())
 }

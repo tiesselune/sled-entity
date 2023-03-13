@@ -8,7 +8,7 @@ use crate::{relation::Relation, AsBytes, Entity, Result};
 /// just use `&entity.get_key().as_bytes()`.
 ///
 /// Execute the query with `get` or `get_single`, providing the Db instance to run it on.
-/// 
+///
 /// For instance, this will list all students older than 18 belonging to a given school and members of a given club.
 /// ```rust
 /// let students = QueryBuilder::new()
@@ -16,7 +16,7 @@ use crate::{relation::Relation, AsBytes, Entity, Result};
 ///     .with_named_relation_to::<Club>(&club_id, "member")
 ///     .get_with_filter(|s : &Student| s.age > 18,&data.db)?;
 /// ```
-/// 
+///
 pub struct QueryBuilder<'a> {
     ids: Vec<Vec<u8>>,
     parent: Option<Vec<u8>>,
@@ -53,13 +53,13 @@ impl<'a> QueryBuilder<'a> {
     }
 
     /// Convenience alias for the `with_id` function.
-    pub fn with_sibling(&mut self, id : &impl AsBytes) -> &mut QueryBuilder<'a> {
+    pub fn with_sibling(&mut self, id: &impl AsBytes) -> &mut QueryBuilder<'a> {
         self.with_id(id);
         self
     }
 
     /// Convenience method to get an entity having a specific id as a child.
-    pub fn with_child(&mut self, id : (&impl AsBytes,&impl AsBytes)) -> &mut QueryBuilder<'a> {
+    pub fn with_child(&mut self, id: (&impl AsBytes, &impl AsBytes)) -> &mut QueryBuilder<'a> {
         self.with_id(id.0);
         self
     }
@@ -96,7 +96,11 @@ impl<'a> QueryBuilder<'a> {
     ///     .get_with_filter(|s : &Student| s.age > 18,&data.db)?;
     /// ```
     /// Note that we precise the type of the closure's parameter to let Rust infer the generic types of this function.
-    pub fn get_with_filter<T : Entity, F : Fn(&T) -> bool>(&self, filter : F, db : &Db) -> Result<Vec<T>>  {
+    pub fn get_with_filter<T: Entity, F: Fn(&T) -> bool>(
+        &self,
+        filter: F,
+        db: &Db,
+    ) -> Result<Vec<T>> {
         let result = self.get::<T>(db)?;
         Ok(result.into_iter().filter(filter).collect())
     }
