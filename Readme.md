@@ -1,7 +1,7 @@
 # Reindeer 🦌
 
 [![crates.io](https://img.shields.io/crates/v/reindeer?style=flat-square)](https://crates.io/crates/reindeer)
-[![Docs](https://img.shields.io/docsrs/reindeer/latest)](https://docs.rs/reindeer/latest/reindeer/)
+[![Docs](https://img.shields.io/docsrs/reindeer/latest?style=flat-square)](https://docs.rs/reindeer/latest/reindeer/)
 [![github](https://img.shields.io/github/stars/tiesselune/reindeer-rs?style=social)](https://github.com/tiesselune/reindeer-rs)
 
 *Reindeer 🦌 lifts your `sled`!*
