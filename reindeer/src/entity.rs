@@ -516,10 +516,12 @@ pub trait Entity: Serialize + DeserializeOwned {
         Self::pre_remove(key, db)?;
         if Self::use_pre_remove_hook() {
             Self::pre_remove_hook(
-                &Self::get_from_u8_array(key, db)?.ok_or_else(|| Error::new(
-                    crate::ErrorKind::IntegrityError,
-                    "Entry was not found".to_string(),
-                ))?,
+                &Self::get_from_u8_array(key, db)?.ok_or_else(|| {
+                    Error::new(
+                        crate::ErrorKind::IntegrityError,
+                        "Entry was not found".to_string(),
+                    )
+                })?,
                 db,
             )?;
         }
