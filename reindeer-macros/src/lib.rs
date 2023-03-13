@@ -131,7 +131,7 @@ pub fn derive_entity(item: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(item as DeriveInput);
     let mut errors = Vec::new();
     let mut result = construct_token_stream(&ast, &mut errors);
-    if errors.len() > 0 {
+    if !errors.is_empty() {
         result.extend::<TokenStream>(
             errors
                 .iter()
@@ -179,7 +179,7 @@ fn generate_alias(
 ) -> TokenStream {
     let (_, ty_generics, _) = generics.split_for_impl();
     let versionned_ident = Ident::new(
-        &format!("{}_v{}", name.to_string(), version),
+        &format!("{}_v{}", name, version),
         Span::call_site(),
     );
     quote! {

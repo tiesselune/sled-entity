@@ -64,9 +64,9 @@ impl Relation {
         for (other_tree, _) in family_descriptor.sibling_trees {
             let tree = db.open_tree(&other_tree)?;
             if let Some(value) = tree.get(old_id)? {
-                tree.insert(&new_id, value)?;
+                tree.insert(new_id, value)?;
                 Relation::change_entity_id(&other_tree, old_id, new_id, db)?;
-                tree.remove(&old_id)?;
+                tree.remove(old_id)?;
             }
         }
         Ok(())
@@ -178,7 +178,7 @@ impl Relation {
                     {
                         continue;
                     }
-                    let tree = db.open_tree(&other_tree_name)?;
+                    let tree = db.open_tree(other_tree_name)?;
                     if tree.contains_key(e1)? {
                         return Err(Error::new(
                             ErrorKind::IntegrityError,
@@ -209,7 +209,7 @@ impl Relation {
         for (other_tree_name, behaviour) in &family_descriptor.child_trees {
             match behaviour {
                 DeletionBehaviour::Error => {
-                    let tree = db.open_tree(&other_tree_name)?;
+                    let tree = db.open_tree(other_tree_name)?;
                     if tree.scan_prefix(e1).count() > 0 {
                         return Err(Error::new(
                             ErrorKind::IntegrityError,
@@ -220,7 +220,7 @@ impl Relation {
                 DeletionBehaviour::Cascade => {
                     let mut new_already_checked = already_checked.to_owned();
                     new_already_checked.push((String::from(tree_name), e1.to_vec()));
-                    let tree = db.open_tree(&other_tree_name)?;
+                    let tree = db.open_tree(other_tree_name)?;
                     let keys = tree
                         .scan_prefix(e1)
                         .filter_map(|e| {

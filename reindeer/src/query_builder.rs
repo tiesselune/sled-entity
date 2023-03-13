@@ -129,7 +129,7 @@ impl<'a> QueryBuilder<'a> {
                 let related_ids = self.get_related_ids::<T>(db)?;
                 let mut target_ids = Vec::new();
                 for related_id in related_ids {
-                    if self.ids.contains(&related_id.as_ref()) {
+                    if self.ids.contains(related_id.as_ref()) {
                         target_ids.push(related_id.clone());
                     }
                 }

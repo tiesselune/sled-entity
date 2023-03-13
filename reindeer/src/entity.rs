@@ -409,7 +409,7 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// my_struct.save(&db)?;
     /// ```
     fn save(&self, db: &Db) -> Result<()> {
-        Self::get_tree(db)?.insert(&self.get_key().as_bytes(), bincode::serialize(self)?)?;
+        Self::get_tree(db)?.insert(self.get_key().as_bytes(), bincode::serialize(self)?)?;
         Ok(())
     }
 
@@ -421,7 +421,7 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// MyStruct::update(&3,|my_struct| my_struct.prop1++,&db)?;
     /// ```
     fn update<F: Fn(&mut Self)>(key: &Self::Key, f: F, db: &Db) -> Result<()> {
-        Self::get_tree(db)?.fetch_and_update(&key.as_bytes(), |e| {
+        Self::get_tree(db)?.fetch_and_update(key.as_bytes(), |e| {
             Result::ok(
                 e.map(|u8_arr| -> Result<IVec> {
                     let mut value = Self::try_from_ivec(IVec::from(u8_arr))?;
@@ -591,7 +591,7 @@ pub trait Entity: Serialize + DeserializeOwned {
     /// }
     /// ```
     fn exists(key: &Self::Key, db: &Db) -> Result<bool> {
-        Ok(Self::get_tree(db)?.contains_key(&key.as_bytes())?)
+        Ok(Self::get_tree(db)?.contains_key(key.as_bytes())?)
     }
 
     /// Exports the entire store for this entity as a JSON file.
@@ -787,7 +787,7 @@ pub trait Entity: Serialize + DeserializeOwned {
         db: &Db,
     ) -> Result<E::Key> {
         let increment = match E::get_tree(db)?
-            .scan_prefix(&self.get_key().as_bytes())
+            .scan_prefix(self.get_key().as_bytes())
             .flatten()
             .last()
         {

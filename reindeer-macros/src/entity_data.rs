@@ -7,7 +7,7 @@ use quote::ToTokens;
 use serde::{Deserialize, Serialize};
 use syn::{Attribute, Fields, Ident, Meta};
 
-const ID_PARSE_ERROR: &'static str =
+const ID_PARSE_ERROR: &str =
     "Could not parse id parameter. id must be a string containing either a field name.";
 
 #[derive(Default, Clone)]
@@ -98,7 +98,7 @@ impl EntityData {
                                 self.version = Some(int);
                             }
                             Err(_) => errors.push(syn::Error::new_spanned(
-                                &int,
+                                int,
                                 "Store version must be a positive integer.",
                             )),
                         },
@@ -141,7 +141,7 @@ impl EntityData {
         let tokens = TokenStream::from_str(str);
         match tokens {
             Ok(tokens) => {
-                let ident = syn::parse::<Ident>(tokens.clone().into());
+                let ident = syn::parse::<Ident>(tokens.into());
                 match ident {
                     Ok(ident) => {
                         self.id = Some(ident);
@@ -168,7 +168,7 @@ impl EntityData {
     fn check(&mut self, span: &Span, errors: &mut Errors) {
         match &self.id {
             None => {
-                let id_field = self.fields.iter().find(|e| e.1.to_string() == "id");
+                let id_field = self.fields.iter().find(|e| e.1 == "id");
                 if let Some(id_field) = id_field {
                     self.id = Some(id_field.1.clone());
                     self.id_type = Some(id_field.2.clone());
@@ -185,7 +185,7 @@ impl EntityData {
         match self
             .fields
             .iter()
-            .find(|e| e.1.to_string() == ident.to_string())
+            .find(|e| *ident == e.1.to_string())
         {
             Some(id) => {
                 self.id_type = Some(id.2.clone());

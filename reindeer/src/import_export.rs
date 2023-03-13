@@ -18,7 +18,7 @@ impl<T: Entity> JsonWrapper<T> {
                     &source.get_key().as_bytes(),
                     db,
                 )?;
-                if relations.related_entities.len() > 0 {
+                if !relations.related_entities.is_empty() {
                     Ok((source, Some(relations)))
                 } else {
                     Ok((source, None))
