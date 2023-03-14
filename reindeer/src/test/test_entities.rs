@@ -7,7 +7,7 @@ use crate::DeletionBehaviour;
 use crate::Entity;
 
 #[derive(Serialize, Deserialize, Entity)]
-#[entity(name = "entity_1", version = 1, crate = "crate")]
+#[entity(name = "entity_1", version = 1, key="id", crate = "crate")]
 #[siblings(("entity_3",Cascade))]
 pub struct Entity1 {
     pub id: u32,
@@ -15,7 +15,7 @@ pub struct Entity1 {
 }
 
 #[derive(Serialize, Deserialize, Clone, Entity)]
-#[entity(name = "entity_2", version = 1, crate = "crate")]
+#[entity(name = "entity_2", version = 1,key="id", crate = "crate")]
 #[children(("child_entity_1",Cascade))]
 pub struct Entity2 {
     pub id: String,
@@ -23,7 +23,7 @@ pub struct Entity2 {
 }
 
 #[derive(Serialize, Deserialize, Entity)]
-#[entity(name = "entity_3", version = 1, crate = "crate")]
+#[entity(name = "entity_3", version = 1, key = "id", crate = "crate")]
 #[siblings(("entity_1",Error))]
 #[children(("child_entity_2",Error))]
 pub struct Entity3 {
@@ -32,20 +32,20 @@ pub struct Entity3 {
 }
 
 #[derive(Serialize, Deserialize, Clone, Entity)]
-#[entity(name = "child_entity_1", version = 1, crate = "crate")]
+#[entity(name = "child_entity_1", version = 1, key = "id", crate = "crate")]
 #[children(("grand_child_entity",Cascade))]
 pub struct ChildEntity1 {
     id: (String, u32),
 }
 
 #[derive(Serialize, Deserialize, Entity)]
-#[entity(name = "child_entity_2", version = 1, crate = "crate")]
+#[entity(name = "child_entity_2", version = 1, key = "id", crate = "crate")]
 pub struct ChildEntity2 {
     id: (u32, u32),
 }
 
 #[derive(Serialize, Deserialize, Entity)]
-#[entity(name = "grand_child_entity", version = 1, crate = "crate")]
+#[entity(name = "grand_child_entity", version = 1, key = "id", crate = "crate")]
 pub struct GrandChildEntity {
     id: ((String, u32), u32),
 }

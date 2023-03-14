@@ -24,3 +24,4 @@ toml = "0.7.2"
 
 [dev-dependencies]
 trybuild = { version = "1.0.78", features = ["diff"] }
+reindeer = { path = "../reindeer"}

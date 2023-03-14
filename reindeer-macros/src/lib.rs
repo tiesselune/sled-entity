@@ -13,12 +13,12 @@
 //! }
 //! ```
 //!
-//! ☝😉 This will generate an `Entity` implementation with store name `User`, version 0, and id being the `id` field.
+//! ☝😉 This will generate an `Entity` implementation with store name `User`, version 0, and key being the `key` field.
 //! To specify other values, use the helper attribute `entity` like so :
 //!
 //! ```rust
 //! #[derive(Serialize,Deserialize,Entity)]
-//! #[entity(name = "user", version = 1,id = "email")]
+//! #[entity(name = "user", version = 1,key = "email")]
 //! struct User {
 //!     email : String,
 //!     username : String,
@@ -32,7 +32,7 @@
 //!
 //! ```rust
 //! #[derive(Serialize,Deserialize,Entity)]
-//! #[entity(name = "user", version = 1,id = "email")]
+//! #[entity(name = "user", version = 1,key = "email")]
 //! #[sibling(("user_data", Cascade))]
 //! #[children(("doc",Cascade),("shared_doc",BreakLink))]
 //! struct User {
@@ -43,7 +43,7 @@
 //! }
 //!
 //! //! #[derive(Serialize,Deserialize,Entity)]
-//! #[entity(name = "user_data", version = 1,id = "email")]
+//! #[entity(name = "user_data", version = 1,key = "email")]
 //! #[sibling(("user", Error))]
 //! struct UserData {
 //!     email : String,
@@ -58,11 +58,6 @@
 mod entity_data;
 mod relations;
 mod schema;
-
-#[cfg(test)]
-mod test_1;
-#[cfg(test)]
-mod test_0;
 
 use entity_data::EntityData;
 use proc_macro::TokenStream;
@@ -82,7 +77,7 @@ type Errors = Vec<syn::Error>;
 /// ```rust
 /// #[derive(Serialize,Deserialize,Entity)]
 /// struct User {
-///     id : (u32,u32),
+///     key : (u32,u32),
 ///     email : String,
 ///     username : String,
 ///     last_login : i64,
@@ -90,12 +85,12 @@ type Errors = Vec<syn::Error>;
 /// }
 /// ```
 ///
-/// ☝😉 This will generate an `Entity` implementation with store name `User`, version 0, and id being the `id` field.
+/// ☝😉 This will generate an `Entity` implementation with store name `User`, version 0, and key being the `key` field.
 /// To specify other values, use the helper attribute `entity` like so :
 ///
 /// ```rust
 /// #[derive(Serialize,Deserialize,Entity)]
-/// #[entity(name = "user", version = 1,id = "email")]
+/// #[entity(name = "user", version = 1,key = "email")]
 /// struct User {
 ///     email : String,
 ///     username : String,
@@ -109,7 +104,7 @@ type Errors = Vec<syn::Error>;
 ///
 /// ```rust
 /// #[derive(Serialize,Deserialize,Entity)]
-/// #[entity(name = "user", version = 1,id = "email")]
+/// #[entity(name = "user", version = 1,key = "email")]
 /// #[siblings(("user_data", Cascade))]
 /// #[children(("doc",Cascade),("shared_doc",BreakLink))]
 /// struct User {
@@ -120,7 +115,7 @@ type Errors = Vec<syn::Error>;
 /// }
 ///
 /// #[derive(Serialize,Deserialize,Entity)]
-/// #[entity(name = "user_data", version = 1,id = "email")]
+/// #[entity(name = "user_data", version = 1,key = "email")]
 /// #[siblings(("user", Error))]
 /// struct UserData {
 ///     email : String,
@@ -202,8 +197,8 @@ fn generate_impl(
 ) -> TokenStream {
     if let (Some(store_name), Some(id_field), Some(key_type), crate_name) = (
         &entity_data.name,
-        &entity_data.id,
-        &entity_data.id_type,
+        &entity_data.key,
+        &entity_data.key_type,
         &entity_data.crate_name,
     ) {
         let crate_name = Ident::new(crate_name, Span::call_site());

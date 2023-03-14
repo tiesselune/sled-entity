@@ -15,8 +15,8 @@ pub struct EntityData {
     pub crate_name: String,
     pub name: Option<String>,
     pub version: Option<u32>,
-    pub id: Option<Ident>,
-    pub id_type: Option<syn::Type>,
+    pub key: Option<Ident>,
+    pub key_type: Option<syn::Type>,
     pub children: Relations,
     pub siblings: Relations,
     pub fields: Vec<(syn::Visibility, syn::Ident, syn::Type)>,
@@ -26,8 +26,8 @@ pub struct EntityData {
 pub struct SerEntityData {
     pub name: Option<String>,
     pub version: Option<u32>,
-    pub id: Option<String>,
-    pub id_type: Option<String>,
+    pub key: Option<String>,
+    pub key_type: Option<String>,
     pub children: Vec<SerRelation>,
     pub siblings: Vec<SerRelation>,
     pub fields: Vec<(String, String, String)>,
@@ -64,7 +64,7 @@ impl EntityData {
             Meta::Path(p) => {
                 errors.push(syn::Error::new_spanned(
                     p,
-                    "Unrecognized argument. Accepted arguments are 'name', 'version' and 'id'",
+                    "Unrecognized argument. Accepted arguments are 'name', 'version' and 'key'",
                 ));
             }
             Meta::List(l) => {
@@ -74,7 +74,7 @@ impl EntityData {
                             self.parse_entity_args(m, errors);
                         }
                         syn::NestedMeta::Lit(l) => {
-                            errors.push(syn::Error::new_spanned(l, "Unrecognized argument. Accepted arguments are 'name', 'version' and 'id'"));
+                            errors.push(syn::Error::new_spanned(l, "Unrecognized argument. Accepted arguments are 'name', 'version' and 'key'"));
                         }
                     }
                 }
@@ -106,14 +106,14 @@ impl EntityData {
                             "Store version must be a positive integer.",
                         )),
                     }
-                } else if nv.path.is_ident("id") {
+                } else if nv.path.is_ident("key") {
                     match &nv.lit {
                         syn::Lit::Str(str) => {
                             self.parse_id_attr(&str.value(), &str.span(), errors);
                         }
                         _ => errors.push(syn::Error::new_spanned(
                             &nv.lit,
-                            "Store ID must be the name of a field as a string litteral.",
+                            "Store Key must be the name of a field as a string litteral.",
                         )),
                     }
                 } else if nv.path.is_ident("crate") {
@@ -129,7 +129,7 @@ impl EntityData {
                 } else {
                     errors.push(syn::Error::new_spanned(
                         &nv.path,
-                        "Unrecognized argument. Accepted arguments are 'name', 'version' and 'id'",
+                        "Unrecognized argument. Accepted arguments are 'name', 'version' and 'key'",
                     ))
                 }
             }
@@ -143,7 +143,7 @@ impl EntityData {
                 let ident = syn::parse::<Ident>(tokens.into());
                 match ident {
                     Ok(ident) => {
-                        self.id = Some(ident);
+                        self.key = Some(ident);
                     }
                     Err(_) => errors.push(syn::Error::new(span.to_owned(), ID_PARSE_ERROR)),
                 }
@@ -165,14 +165,14 @@ impl EntityData {
     }
 
     fn check(&mut self, span: &Span, errors: &mut Errors) {
-        match &self.id {
+        match &self.key {
             None => {
-                let id_field = self.fields.iter().find(|e| e.1 == "id");
-                if let Some(id_field) = id_field {
-                    self.id = Some(id_field.1.clone());
-                    self.id_type = Some(id_field.2.clone());
+                let key_field = self.fields.iter().find(|e| e.1 == "key");
+                if let Some(key_field) = key_field {
+                    self.key = Some(key_field.1.clone());
+                    self.key_type = Some(key_field.2.clone());
                 } else {
-                    errors.push(syn::Error::new(span.to_owned(), r#"Missing ID specification. Use either a field called  `id`, or specify the 'id' argument of the `entity` helper attribute : `#[entity(id = "key")]`"#));
+                    errors.push(syn::Error::new(span.to_owned(), r#"Missing key specification. Use either a field called  `key`, or specify the 'id' argument of the `entity` helper attribute : `#[entity(key = "field_name")]`"#));
                 }
             }
             Some(id) => {
@@ -186,8 +186,8 @@ impl EntityData {
             .iter()
             .find(|e| *ident == e.1.to_string())
         {
-            Some(id) => {
-                self.id_type = Some(id.2.clone());
+            Some(key) => {
+                self.key_type = Some(key.2.clone());
             }
             None => {
                 errors.push(syn::Error::new(
@@ -218,8 +218,8 @@ impl From<EntityData> for SerEntityData {
         SerEntityData {
             name: value.name,
             version: value.version,
-            id: value.id.map(|e| e.to_string()),
-            id_type: value.id_type.map(|e| e.to_token_stream().to_string()),
+            key: value.key.map(|e| e.to_string()),
+            key_type: value.key_type.map(|e| e.to_token_stream().to_string()),
             children: value.children.0.into_iter().map(|e| e.into()).collect(),
             siblings: value.siblings.0.into_iter().map(|e| e.into()).collect(),
             fields: value
