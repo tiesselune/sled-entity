@@ -59,6 +59,11 @@ mod entity_data;
 mod relations;
 mod schema;
 
+#[cfg(test)]
+mod test_1;
+#[cfg(test)]
+mod test_0;
+
 use entity_data::EntityData;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
@@ -105,7 +110,7 @@ type Errors = Vec<syn::Error>;
 /// ```rust
 /// #[derive(Serialize,Deserialize,Entity)]
 /// #[entity(name = "user", version = 1,id = "email")]
-/// #[sibling(("user_data", Cascade))]
+/// #[siblings(("user_data", Cascade))]
 /// #[children(("doc",Cascade),("shared_doc",BreakLink))]
 /// struct User {
 ///     email : String,
@@ -116,7 +121,7 @@ type Errors = Vec<syn::Error>;
 ///
 /// #[derive(Serialize,Deserialize,Entity)]
 /// #[entity(name = "user_data", version = 1,id = "email")]
-/// #[sibling(("user", Error))]
+/// #[siblings(("user", Error))]
 /// struct UserData {
 ///     email : String,
 ///     username : String,
@@ -234,10 +239,10 @@ fn generate_impl(
                     self.#id_field = key.clone();
                 }
                 fn get_child_stores() -> Vec<(&'static str, #crate_name::DeletionBehaviour)> {
-                    vec![#(#children)*]
+                    vec![#(#children,)*]
                 }
                 fn get_sibling_stores() -> Vec<(&'static str, #crate_name::DeletionBehaviour)> {
-                    vec![#(#siblings)*]
+                    vec![#(#siblings,)*]
                 }
             }
         }
